@@ -560,4 +560,7 @@
       max-height: 300px;
     }
     
-    .t
+    .templates-grid {
+      grid-template-columns: 1fr;
+    }
+  }
