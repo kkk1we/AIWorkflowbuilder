@@ -1,26 +1,238 @@
 "use client";
 
-
-
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactFlow, { 
+  Background, 
+  Controls, 
+  MiniMap, 
+  addEdge, 
+  useNodesState, 
+  useEdgesState,
+  Panel
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import { 
   Play, FilePlus, Layers, Settings, Check, Code, Save, 
   PlusCircle, X, ChevronRight, Download, Upload, ArrowRight,
   Search, Plus, LayoutGrid, Menu, Zap, Trash2, Edit,
   ChevronDown, ChevronUp, Folder, FileText, Mic, Scissors,
-  Brain, Tag, User, Filter, Mail, Database, Bell, Globe
+  Brain, Tag, User, Filter, Mail, Database, Bell, Globe,
+  Clock, Activity, GitBranch, CornerDownRight
 } from 'lucide-react';
+
+// --- Render conditional module configuration ---
+const renderConditionalConfig = (currentModuleConfig) => {
+  if (!currentModuleConfig) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Condition Type</label>
+        <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="Contains Text">
+          <option>Contains Text</option>
+          <option>Greater Than</option>
+          <option>Less Than</option>
+          <option>Equal To</option>
+          <option>Custom Expression</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Value to Check</label>
+        <input 
+          type="text" 
+          className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+          placeholder="Enter value or variable" 
+          defaultValue={currentModuleConfig.config.valueToCheck || ""}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Condition Value</label>
+        <input 
+          type="text" 
+          className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+          placeholder="Enter comparison value" 
+          defaultValue={currentModuleConfig.config.conditionValue || ""}
+        />
+      </div>
+    </div>
+  );
+};
+
+// --- Render trigger module configuration ---
+const renderTriggerConfig = (currentModuleConfig) => {
+  if (!currentModuleConfig) return null;
+
+  if (currentModuleConfig.type === 'Webhook Trigger') {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Webhook Path</label>
+          <input 
+            type="text" 
+            className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+            placeholder="/api/trigger/my-webhook" 
+            defaultValue={currentModuleConfig.config.path || ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Authentication Type</label>
+          <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="None">
+            <option>None</option>
+            <option>API Key</option>
+            <option>Bearer Token</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentModuleConfig.type === 'Schedule Trigger') {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Schedule Type</label>
+          <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="Hourly">
+            <option>Hourly</option>
+            <option>Daily</option>
+            <option>Weekly</option>
+            <option>Monthly</option>
+            <option>Custom Cron</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Time (24h format)</label>
+          <input 
+            type="text" 
+            className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+            placeholder="14:00" 
+            defaultValue={currentModuleConfig.config.time || ""}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Default catch-all for other triggers
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Trigger Configuration</label>
+        <p className="text-sm text-gray-500">Configure your {currentModuleConfig.type} settings here.</p>
+      </div>
+    </div>
+  );
+};
+
+// Custom Node Component
+const ModuleNode = ({ data, id }) => {
+  // Determine node style based on type
+  let nodeStyle = "p-4 bg-white rounded-lg border shadow-sm flex items-center w-64";
+  
+  if (data.selected) {
+    nodeStyle += " border-indigo-300";
+  } else if (data.isTrigger) {
+    nodeStyle += " border-orange-300";
+  } else if (data.isConditional) {
+    nodeStyle += " border-indigo-300";
+  } else {
+    nodeStyle += " border-gray-200";
+  }
+  
+  // Add a trigger/condition badge
+  const renderBadge = () => {
+    if (data.isTrigger) {
+      return <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">Trigger</div>;
+    }
+    if (data.isConditional && data.label === 'If Condition') {
+      return <div className="absolute -top-2 -left-2 bg-indigo-500 text-white text-xs px-2 py-1 rounded-full">Condition</div>;
+    }
+    if (data.isConditional && data.label === 'Else Path') {
+      return <div className="absolute -top-2 -left-2 bg-indigo-500 text-white text-xs px-2 py-1 rounded-full">Else</div>;
+    }
+    return null;
+  };
+  
+  return (
+    <div className="relative">
+      {renderBadge()}
+      <div className={nodeStyle}>
+        <div className={`w-10 h-10 flex items-center justify-center ${data.iconColor} rounded-lg mr-3`}>
+          {data.icon}
+        </div>
+        <div className="flex-1">
+          <h4 className="text-sm font-medium text-gray-800">{data.label}</h4>
+          <p className="text-xs text-gray-500">
+            {Object.keys(data.config || {}).length > 0 
+              ? `${Object.keys(data.config).length} configurations set` 
+              : 'No configuration set'}
+          </p>
+        </div>
+        <div className="flex">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onConfig(id);
+            }}
+            className="p-1 text-gray-400 hover:text-indigo-600"
+          >
+            <Settings size={16} />
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onDelete(id);
+            }}
+            className="p-1 text-gray-400 hover:text-red-600"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Connection button on the right edge */}
+      <div className="absolute top-1/2 -right-3 transform -translate-y-1/2">
+        <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-600 text-white">
+          <ChevronRight size={14} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Custom node types
+const nodeTypes = {
+  moduleNode: ModuleNode,
+};
 
 const ModularPipeline = () => {
   const [activeTab, setActiveTab] = useState('builder');
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [workflowName, setWorkflowName] = useState('New Workflow');
-  const [activeModules, setActiveModules] = useState([]);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [currentModuleConfig, setCurrentModuleConfig] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
+  const reactFlowWrapper = useRef(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  
+  // React Flow State
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  
+  // Handle connections between nodes
+  const onConnect = useCallback((params) => {
+    setEdges((eds) => addEdge({
+      ...params,
+      animated: true,
+      style: { stroke: '#6366F1' },
+      markerEnd: {
+        type: 'arrowclosed',
+        width: 20,
+        height: 20,
+        color: '#6366F1',
+      },
+    }, eds));
+  }, [setEdges]);
 
   // Predefined templates
   const workflowTemplates = [
@@ -160,8 +372,32 @@ const ModularPipeline = () => {
     }
   ];
 
-  // Enhanced available modules with categories and icons
+  // Enhanced modules with categories/icons
   const availableModules = [
+    // Trigger modules
+    { 
+      type: 'Webhook Trigger', 
+      description: 'Start workflow when webhook is called',
+      category: 'Trigger',
+      icon: 'zap',
+      isTrigger: true
+    },
+    { 
+      type: 'Schedule Trigger', 
+      description: 'Run workflow on a time schedule',
+      category: 'Trigger',
+      icon: 'clock',
+      isTrigger: true
+    },
+    { 
+      type: 'Event Trigger', 
+      description: 'Start workflow on specific event',
+      category: 'Trigger',
+      icon: 'activity',
+      isTrigger: true
+    },
+    
+    // Regular modules
     { 
       type: 'File Ingestor', 
       description: 'Handles user uploads (PDF, DOCX, audio, CSV)',
@@ -239,6 +475,22 @@ const ModularPipeline = () => {
       description: 'Scrapes content from websites',
       category: 'Input',
       icon: 'globe'
+    },
+    
+    // Conditional modules
+    { 
+      type: 'If Condition', 
+      description: 'Branch workflow based on condition',
+      category: 'Control',
+      icon: 'git-branch',
+      isConditional: true
+    },
+    { 
+      type: 'Else Path', 
+      description: 'Alternative path for failed condition',
+      category: 'Control',
+      icon: 'corner-down-right',
+      isConditional: true
     }
   ];
 
@@ -250,113 +502,217 @@ const ModularPipeline = () => {
 
   const categories = [...new Set(availableModules.map(m => m.category))];
 
+  // Convert React Flow nodes to active modules
+  const getActiveModules = () => {
+    return nodes.map(node => ({
+      type: node.data.label,
+      config: node.data.config || {},
+      position: node.data.position,
+      icon: node.data.iconName
+    }));
+  };
+
+  // Select template and create nodes/edges
   const selectWorkflowTemplate = (template) => {
     setSelectedWorkflow(template);
     setWorkflowName(template.name);
-    setActiveModules([...template.modules]);
-  };
-
-  const addModule = (module) => {
-    const position = activeModules.length > 0 
-      ? Math.max(...activeModules.map(m => m.position)) + 1 
-      : 1;
     
-    setActiveModules([
-      ...activeModules, 
-      { 
-        type: module.type, 
-        config: {}, 
-        position,
-        icon: module.icon
+    const newNodes = [];
+    const newEdges = [];
+    
+    template.modules.forEach((module, index) => {
+      const moduleType = availableModules.find(m => m.type === module.type);
+      const iconName = moduleType ? moduleType.icon : 'settings';
+      const category = moduleType ? moduleType.category : 'default';
+      
+      newNodes.push({
+        id: `${module.type}-${index}`,
+        type: 'moduleNode',
+        position: { x: 250, y: 100 + index * 150 },
+        data: {
+          label: module.type,
+          config: module.config,
+          position: module.position,
+          icon: getModuleIcon(iconName),
+          iconColor: getModuleIconColor(category),
+          iconName: iconName,
+          category: category,
+          onConfig: openModuleConfig,
+          onDelete: removeNode,
+          selected: false,
+          isTrigger: moduleType?.isTrigger || false,
+          isConditional: moduleType?.isConditional || false
+        }
+      });
+      
+      if (index > 0) {
+        newEdges.push({
+          id: `e-${index-1}-${index}`,
+          source: `${template.modules[index-1].type}-${index-1}`,
+          target: `${module.type}-${index}`,
+          animated: true,
+          style: { stroke: '#6366F1' },
+          markerEnd: {
+            type: 'arrowclosed',
+            width: 20,
+            height: 20,
+            color: '#6366F1',
+          },
+        });
       }
-    ]);
-  };
-
-  const removeModule = (index) => {
-    const updatedModules = [...activeModules];
-    updatedModules.splice(index, 1);
-    
-    // Update positions
-    updatedModules.forEach((module, idx) => {
-      module.position = idx + 1;
     });
     
-    setActiveModules(updatedModules);
-    
-    // If the currently selected module is being removed, deselect it
-    if (selectedModuleIndex === index) {
-      setSelectedModuleIndex(null);
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setActiveTab('builder');
+  };
+
+  // Add a new node when dragging from the sidebar
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const moduleData = event.dataTransfer.getData('module');
+      
+      if (!moduleData || !reactFlowInstance) {
+        return;
+      }
+      
+      const module = JSON.parse(moduleData);
+      const position = reactFlowInstance.project({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
+      
+      const nodeId = `${module.type}-${nodes.length}`;
+      const newNode = {
+        id: nodeId,
+        type: 'moduleNode',
+        position,
+        data: {
+          label: module.type,
+          config: {},
+          position: nodes.length + 1,
+          icon: getModuleIcon(module.icon),
+          iconColor: getModuleIconColor(module.category),
+          iconName: module.icon,
+          category: module.category,
+          onConfig: openModuleConfig,
+          onDelete: removeNode,
+          selected: false,
+          isTrigger: module.isTrigger || false,
+          isConditional: module.isConditional || false
+        },
+      };
+      
+      setNodes((nds) => nds.concat(newNode));
+      
+      // Simple logic to create edges from existing nodes if close in y-position
+      if (nodes.length > 0) {
+        const newEdges = [];
+        nodes.forEach(existingNode => {
+          if (
+            Math.abs(existingNode.position.y - position.y) < 100 && 
+            existingNode.position.x < position.x
+          ) {
+            newEdges.push({
+              id: `e-${existingNode.id}-${nodeId}`,
+              source: existingNode.id,
+              target: nodeId,
+              animated: true,
+              style: { stroke: '#6366F1' }
+            });
+          }
+        });
+        
+        if (newEdges.length > 0) {
+          setEdges((eds) => eds.concat(newEdges));
+        }
+      }
+    },
+    [nodes, reactFlowInstance, setNodes, setEdges]
+  );
+
+  // Open module config modal
+  const openModuleConfig = (nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      setCurrentModuleConfig({
+        id: nodeId,
+        type: node.data.label,
+        config: node.data.config || {},
+        icon: node.data.iconName,
+        category: node.data.category
+      });
+      setIsConfigOpen(true);
     }
   };
 
-  const moveModuleUp = (index) => {
-    if (index === 0) return;
-    const updatedModules = [...activeModules];
-    const temp = updatedModules[index];
-    updatedModules[index] = updatedModules[index - 1];
-    updatedModules[index - 1] = temp;
-    
-    // Update positions
-    updatedModules.forEach((module, idx) => {
-      module.position = idx + 1;
-    });
-    
-    setActiveModules(updatedModules);
-    
-    // Update selected module index if necessary
-    if (selectedModuleIndex === index) {
-      setSelectedModuleIndex(index - 1);
-    } else if (selectedModuleIndex === index - 1) {
-      setSelectedModuleIndex(index);
-    }
-  };
-
-  const moveModuleDown = (index) => {
-    if (index === activeModules.length - 1) return;
-    const updatedModules = [...activeModules];
-    const temp = updatedModules[index];
-    updatedModules[index] = updatedModules[index + 1];
-    updatedModules[index + 1] = temp;
-    
-    // Update positions
-    updatedModules.forEach((module, idx) => {
-      module.position = idx + 1;
-    });
-    
-    setActiveModules(updatedModules);
-    
-    // Update selected module index if necessary
-    if (selectedModuleIndex === index) {
-      setSelectedModuleIndex(index + 1);
-    } else if (selectedModuleIndex === index + 1) {
-      setSelectedModuleIndex(index);
-    }
-  };
-
-  const openModuleConfig = (module, index) => {
-    setCurrentModuleConfig({ ...module, index });
-    setIsConfigOpen(true);
-  };
-
+  // Update module configuration
   const updateModuleConfig = (config) => {
     if (!currentModuleConfig) return;
     
-    const updatedModules = [...activeModules];
-    updatedModules[currentModuleConfig.index].config = config;
-    setActiveModules(updatedModules);
+    setNodes(prevNodes => 
+      prevNodes.map(node => {
+        if (node.id === currentModuleConfig.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config
+            }
+          };
+        }
+        return node;
+      })
+    );
     setIsConfigOpen(false);
   };
 
-  const selectModule = (index) => {
-    if (selectedModuleIndex === index) {
-      setSelectedModuleIndex(null);
-    } else {
-      setSelectedModuleIndex(index);
-      const module = activeModules[index];
-      setCurrentModuleConfig({ ...module, index });
-    }
+  // Remove a node
+  const removeNode = (nodeId) => {
+    setNodes(nodes.filter(node => node.id !== nodeId));
+    setEdges(edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId));
+  };
+  
+  // Handle keyboard events for node deletion
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNode = nodes.find(node => node.data.selected);
+        if (selectedNode) {
+          removeNode(selectedNode.id);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [nodes]);
+
+  // Node click -> open config
+  const onNodeClick = (event, node) => {
+    setNodes(prevNodes => 
+      prevNodes.map(n => ({
+        ...n,
+        data: {
+          ...n.data,
+          selected: n.id === node.id
+        }
+      }))
+    );
+    openModuleConfig(node.id);
   };
 
+  // Handle drag start from sidebar
   const handleDragStart = (e, module) => {
     e.dataTransfer.setData('module', JSON.stringify(module));
     setIsDragging(true);
@@ -366,24 +722,7 @@ const ModularPipeline = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    try {
-      const moduleData = e.dataTransfer.getData('module');
-      if (moduleData) {
-        const module = JSON.parse(moduleData);
-        addModule(module);
-      }
-    } catch (error) {
-      console.error('Error handling drop:', error);
-    }
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
+  // Icon helper
   const getModuleIcon = (iconName) => {
     switch (iconName) {
       case 'folder': return <Folder size={16} />;
@@ -398,10 +737,16 @@ const ModularPipeline = () => {
       case 'database': return <Database size={16} />;
       case 'bell': return <Bell size={16} />;
       case 'globe': return <Globe size={16} />;
+      case 'zap': return <Zap size={16} />;
+      case 'clock': return <Clock size={16} />;
+      case 'activity': return <Activity size={16} />;
+      case 'git-branch': return <GitBranch size={16} />;
+      case 'corner-down-right': return <CornerDownRight size={16} />;
       default: return <Settings size={16} />;
     }
   };
 
+  // Icon color helper
   const getModuleIconColor = (category) => {
     switch (category) {
       case 'Input': return 'bg-blue-100 text-blue-600';
@@ -409,22 +754,31 @@ const ModularPipeline = () => {
       case 'AI': return 'bg-purple-100 text-purple-600';
       case 'Data': return 'bg-green-100 text-green-600';
       case 'Output': return 'bg-red-100 text-red-600';
+      case 'Trigger': return 'bg-orange-100 text-orange-600';
+      case 'Control': return 'bg-indigo-100 text-indigo-600';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
 
+  // Generate YAML configuration
   const generateYaml = () => {
+    const activeModules = getActiveModules();
     return `name: ${workflowName}
 description: Custom workflow
 version: 1.0.0
 steps:
-${activeModules.map(module => `  - type: ${module.type.toLowerCase().replace(/\s+/g, '_')}
+${activeModules
+  .map((module) => `  - type: ${module.type.toLowerCase().replace(/\s+/g, '_')}
     position: ${module.position}
     config:
-${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stringify(value)}`).join('\n')}`).join('\n')}
+${Object.entries(module.config)
+  .map(([key, value]) => `      ${key}: ${JSON.stringify(value)}`)
+  .join('\n')}`)
+  .join('\n')}
 `;
   };
 
+  // Renders modules by category in sidebar
   const renderModulesByCategory = () => {
     return categories.map(category => (
       <div key={category} className="mb-4">
@@ -439,7 +793,6 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
                 draggable
                 onDragStart={(e) => handleDragStart(e, module)}
                 onDragEnd={handleDragEnd}
-                onClick={() => addModule(module)}
               >
                 <div className={`w-8 h-8 flex items-center justify-center ${getModuleIconColor(module.category)} rounded-lg`}>
                   {getModuleIcon(module.icon)}
@@ -455,6 +808,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
     ));
   };
 
+  // Renders templates grid
   const renderTemplatesGrid = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -462,7 +816,6 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
           <div 
             key={template.id}
             className="bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-            onClick={() => selectWorkflowTemplate(template)}
           >
             <div className="flex items-center mb-2">
               <span className="text-2xl mr-2">{template.icon}</span>
@@ -472,12 +825,17 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
             <div className="space-y-2 mb-4">
               {template.modules.map((module, idx) => (
                 <div key={idx} className="flex items-center text-sm">
-                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs mr-2">{idx + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs mr-2">
+                    {idx + 1}
+                  </span>
                   <span>{module.type}</span>
                 </div>
               ))}
             </div>
-            <button className="w-full py-2 text-center bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 transition-colors text-sm font-medium">
+            <button 
+              onClick={() => selectWorkflowTemplate(template)}
+              className="w-full py-2 text-center bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 transition-colors text-sm font-medium"
+            >
               Use This Template
             </button>
           </div>
@@ -486,6 +844,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
     );
   };
 
+  // Renders YAML configuration
   const renderYamlConfig = () => {
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -503,7 +862,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
     );
   };
 
-  // Fixed LLM Analyzer configuration component
+  // Module-specific config forms
   const renderLLMAnalyzerConfig = () => {
     if (!currentModuleConfig) return null;
     
@@ -511,7 +870,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Prompt Template</label>
-          <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
+          <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="Default Analyzer">
             <option>Default Analyzer</option>
             <option>Skill Extractor</option>
             <option>Action Item Generator</option>
@@ -520,7 +879,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Model</label>
-          <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
+          <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="GPT-4">
             <option>GPT-4</option>
             <option>Claude 3</option>
             <option>Mistral</option>
@@ -548,13 +907,12 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
             className="w-full p-2 border border-gray-300 rounded-md text-sm h-24"
             placeholder="Enter your custom prompt instructions..."
             defaultValue={currentModuleConfig.config.customPrompt || ""}
-          ></textarea>
+          />
         </div>
       </div>
     );
   };
 
-  // Fixed Notifier configuration component
   const renderNotifierConfig = () => {
     if (!currentModuleConfig) return null;
     
@@ -562,7 +920,7 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Notification Channel</label>
-          <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
+          <select className="w-full p-2 border border-gray-300 rounded-md text-sm" defaultValue="Slack">
             <option>Slack</option>
             <option>Email</option>
             <option>Webhook</option>
@@ -583,13 +941,12 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
             className="w-full p-2 border border-gray-300 rounded-md text-sm h-24" 
             placeholder="Enter your notification message template..."
             defaultValue={currentModuleConfig.config.messageTemplate || ""}
-          ></textarea>
+          />
         </div>
       </div>
     );
   };
 
-  // Fixed File Ingestor configuration component
   const renderFileIngestorConfig = () => {
     if (!currentModuleConfig) return null;
     
@@ -661,21 +1018,33 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
         <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4">
           <div className="flex items-center space-x-4">
             <button 
-              className={`px-3 py-2 text-sm font-medium ${activeTab === 'builder' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-900'}`} 
+              className={`px-3 py-2 text-sm font-medium ${
+                activeTab === 'builder' 
+                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`} 
               onClick={() => setActiveTab('builder')}
             >
               <LayoutGrid size={16} className="inline mr-1" />
               Workflow Builder
             </button>
             <button 
-              className={`px-3 py-2 text-sm font-medium ${activeTab === 'templates' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-900'}`} 
+              className={`px-3 py-2 text-sm font-medium ${
+                activeTab === 'templates' 
+                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`} 
               onClick={() => setActiveTab('templates')}
             >
               <Menu size={16} className="inline mr-1" />
               Templates
             </button>
             <button 
-              className={`px-3 py-2 text-sm font-medium ${activeTab === 'yaml' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-900'}`} 
+              className={`px-3 py-2 text-sm font-medium ${
+                activeTab === 'yaml' 
+                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`} 
               onClick={() => setActiveTab('yaml')}
             >
               <Code size={16} className="inline mr-1" />
@@ -698,139 +1067,47 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
         {/* Tab Content */}
         <div className="flex-1 overflow-auto">
           {activeTab === 'builder' && (
-            <div className="flex h-full">
-              <div className="flex-1 p-6 overflow-auto">
-                <div className="mb-4">
+            <div className="h-full" ref={reactFlowWrapper} onDrop={onDrop} onDragOver={onDragOver}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onNodeClick={onNodeClick}
+                fitView
+              >
+                <Background />
+                <Controls />
+                <MiniMap />
+                
+                {/* Workflow Name Panel */}
+                <Panel position="top-left" className="m-2 bg-white px-3 py-2 rounded shadow-md flex items-center space-x-2">
                   <input
                     type="text"
                     value={workflowName}
                     onChange={(e) => setWorkflowName(e.target.value)}
                     placeholder="Workflow Name"
-                    className="w-full max-w-xl px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    className="w-64 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                   />
-                </div>
+                </Panel>
                 
-                <div 
-                  className={`bg-white rounded-lg border-2 ${isDragging ? 'border-indigo-400 border-dashed' : 'border-gray-200'} min-h-[500px] transition-colors p-6`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                >
-                  {activeModules.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-96 text-center">
+                {nodes.length === 0 && (
+                  <Panel position="center" className="bg-white p-6 rounded-md shadow-md text-center">
+                    <div className="flex flex-col items-center justify-center">
                       <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
                         <Plus size={24} className="text-indigo-600" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-800 mb-1">Start Building Your Workflow</h3>
-                      <p className="text-sm text-gray-500 max-w-md">Drag modules from the sidebar and drop them here to create your workflow pipeline.</p>
+                      <p className="text-sm text-gray-500 max-w-md">
+                        Drag modules from the sidebar and drop them here to create your workflow pipeline.
+                      </p>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {activeModules
-                        .sort((a, b) => a.position - b.position)
-                        .map((module, index) => (
-                            <div key={index} className="relative">
-                            <div 
-                                className={`flex items-center ${selectedModuleIndex === index ? 'ring-2 ring-indigo-500' : ''}`}
-                                onClick={() => selectModule(index)}
-                            >
-                                <div className={`p-4 bg-white rounded-lg border ${selectedModuleIndex === index ? 'border-indigo-300' : 'border-gray-200'} shadow-sm flex items-center w-full`}>
-                                <div className={`w-10 h-10 flex items-center justify-center ${module.icon ? getModuleIconColor(availableModules.find(m => m.type === module.type)?.category || 'default') : 'bg-gray-100 text-gray-600'} rounded-lg mr-3`}>
-                                    {module.icon ? getModuleIcon(module.icon) : <Settings size={16} />}
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-gray-800">{module.type}</h4>
-                                    <p className="text-xs text-gray-500">
-                                    {Object.keys(module.config).length > 0 
-                                        ? `${Object.keys(module.config).length} configurations set` 
-                                        : 'No configuration set'}
-                                    </p>
-                                </div>
-                                <div className="flex space-x-1">
-                                    <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        moveModuleUp(index);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    disabled={index === 0}
-                                    >
-                                    <ChevronUp size={16} />
-                                    </button>
-                                    <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        moveModuleDown(index);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    disabled={index === activeModules.length - 1}
-                                    >
-                                    <ChevronDown size={16} />
-                                    </button>
-                                    <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openModuleConfig(module, index);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-indigo-600"
-                                    >
-                                    <Settings size={16} />
-                                    </button>
-                                    <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeModule(index);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-red-600"
-                                    >
-                                    <Trash2 size={16} />
-                                    </button>
-                                </div>
-                                </div>
-                            </div>
-
-                            {index < activeModules.length - 1 && (
-                                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 mb-1 text-gray-300">
-                                <ArrowRight size={20} />
-                                </div>
-                            )}
-                            </div>
-                        ))}
-
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Properties Panel */}
-              {selectedModuleIndex !== null && currentModuleConfig && (
-                <div className="w-72 bg-white border-l border-gray-200 overflow-auto">
-                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-sm font-medium text-gray-700">Configure {currentModuleConfig.type}</h2>
-                    <button 
-                      className="text-gray-400 hover:text-gray-600"
-                      onClick={() => setSelectedModuleIndex(null)}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="p-4">
-                    {/* Dynamic configuration form based on module type */}
-                    {currentModuleConfig.type === 'File Ingestor' && renderFileIngestorConfig()}
-                    {currentModuleConfig.type === 'LLM Analyzer' && renderLLMAnalyzerConfig()}
-                    {currentModuleConfig.type === 'Notifier' && renderNotifierConfig()}
-                    
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <button 
-                        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 text-sm font-medium"
-                        onClick={() => updateModuleConfig(currentModuleConfig.config)}
-                      >
-                        Save Configuration
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  </Panel>
+                )}
+              </ReactFlow>
             </div>
           )}
           
@@ -863,15 +1140,33 @@ ${Object.entries(module.config).map(([key, value]) => `      ${key}: ${JSON.stri
             </div>
             
             <div className="p-4">
-              {currentModuleConfig.type === 'File Ingestor' && renderFileIngestorConfig()}
-              {currentModuleConfig.type === 'LLM Analyzer' && renderLLMAnalyzerConfig()}
-              {currentModuleConfig.type === 'Notifier' && renderNotifierConfig()}
+              {currentModuleConfig?.type === 'File Ingestor' && renderFileIngestorConfig()}
+              {currentModuleConfig?.type === 'LLM Analyzer' && renderLLMAnalyzerConfig()}
+              {currentModuleConfig?.type === 'Notifier' && renderNotifierConfig()}
+              {currentModuleConfig?.type === 'If Condition' && renderConditionalConfig(currentModuleConfig)}
+              {currentModuleConfig?.type === 'Else Path' && (
+                <div className="text-center text-gray-500 py-4">
+                  <p>Else path will automatically execute when the connected If condition is false.</p>
+                </div>
+              )}
+              {(currentModuleConfig?.type === 'Webhook Trigger' ||
+                currentModuleConfig?.type === 'Schedule Trigger' || 
+                currentModuleConfig?.type === 'Event Trigger') && renderTriggerConfig(currentModuleConfig)}
               
               {/* Default configuration for other module types */}
-              {!['File Ingestor', 'LLM Analyzer', 'Notifier'].includes(currentModuleConfig.type) && (
+              {![
+                'File Ingestor',
+                'LLM Analyzer',
+                'Notifier',
+                'If Condition',
+                'Else Path',
+                'Webhook Trigger',
+                'Schedule Trigger',
+                'Event Trigger'
+              ].includes(currentModuleConfig?.type) && (
                 <div className="py-8 text-center text-gray-500">
                   <Settings size={24} className="mx-auto mb-2" />
-                  <p>Configure {currentModuleConfig.type} settings here.</p>
+                  <p>Configure {currentModuleConfig?.type} settings here.</p>
                 </div>
               )}
             </div>
