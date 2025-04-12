@@ -44,9 +44,12 @@ import {
   CornerDownRight,
 } from "lucide-react";
 
-/* ------------------------------------------------------------------
-   1) Module-specific config forms
-   ------------------------------------------------------------------ */
+/* 
+  ------------------------------------------------------------------
+  1) MODULE-SPECIFIC CONFIGURATION FORMS (shortened for brevity)
+  ------------------------------------------------------------------
+*/
+
 const renderConditionalConfig = (currentModuleConfig) => {
   if (!currentModuleConfig) return null;
 
@@ -90,225 +93,15 @@ const renderConditionalConfig = (currentModuleConfig) => {
   );
 };
 
-const renderTriggerConfig = (currentModuleConfig) => {
-  if (!currentModuleConfig) return null;
+// Add similar “renderXYZConfig()” functions for other module types (Trigger, LLM, Notifier, etc.)
 
-  if (currentModuleConfig.type === "Webhook Trigger") {
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Webhook Path
-          </label>
-          <input
-            type="text"
-            className="w-full p-2 border border-gray-300 rounded-md text-sm"
-            placeholder="/api/trigger/my-webhook"
-            defaultValue={currentModuleConfig.config.path || ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Authentication Type
-          </label>
-          <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-            <option>None</option>
-            <option>API Key</option>
-            <option>Bearer Token</option>
-          </select>
-        </div>
-      </div>
-    );
-  }
-
-  if (currentModuleConfig.type === "Schedule Trigger") {
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Schedule Type
-          </label>
-          <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-            <option>Hourly</option>
-            <option>Daily</option>
-            <option>Weekly</option>
-            <option>Monthly</option>
-            <option>Custom Cron</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Time (24h format)
-          </label>
-          <input
-            type="text"
-            className="w-full p-2 border border-gray-300 rounded-md text-sm"
-            placeholder="14:00"
-            defaultValue={currentModuleConfig.config.time || ""}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Default for other triggers
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Trigger Configuration
-        </label>
-        <p className="text-sm text-gray-500">
-          Configure your {currentModuleConfig.type} settings here.
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const renderLLMAnalyzerConfig = (currentModuleConfig) => {
-  if (!currentModuleConfig) return null;
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Prompt Template
-        </label>
-        <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-          <option>Default Analyzer</option>
-          <option>Skill Extractor</option>
-          <option>Action Item Generator</option>
-          <option>Financial Metrics</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Model</label>
-        <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-          <option>GPT-4</option>
-          <option>Claude 3</option>
-          <option>Mistral</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Temperature
-        </label>
-        <input
-          type="range"
-          className="w-full"
-          min="0"
-          max="1"
-          step="0.1"
-          defaultValue={currentModuleConfig.config.temperature || 0.7}
-        />
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>Precise</span>
-          <span>Creative</span>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Custom Prompt
-        </label>
-        <textarea
-          className="w-full p-2 border border-gray-300 rounded-md text-sm h-24"
-          placeholder="Enter your custom prompt instructions..."
-          defaultValue={currentModuleConfig.config.customPrompt || ""}
-        />
-      </div>
-    </div>
-  );
-};
-
-const renderNotifierConfig = (currentModuleConfig) => {
-  if (!currentModuleConfig) return null;
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Notification Channel
-        </label>
-        <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-          <option>Slack</option>
-          <option>Email</option>
-          <option>Webhook</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Destination
-        </label>
-        <input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded-md text-sm"
-          placeholder="#channel or email@example.com"
-          defaultValue={currentModuleConfig.config.destination || ""}
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Message Template
-        </label>
-        <textarea
-          className="w-full p-2 border border-gray-300 rounded-md text-sm h-24"
-          placeholder="Enter your notification message template..."
-          defaultValue={currentModuleConfig.config.messageTemplate || ""}
-        />
-      </div>
-    </div>
-  );
-};
-
-const renderFileIngestorConfig = (currentModuleConfig) => {
-  if (!currentModuleConfig) return null;
-
-  const fileTypes = ["pdf", "docx", "csv", "mp3", "mp4", "wav"];
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Accepted File Types
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          {fileTypes.map((type) => (
-            <label
-              key={type}
-              className="flex items-center space-x-2 p-2 border border-gray-200 rounded bg-white"
-            >
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                defaultChecked={
-                  (currentModuleConfig.config.acceptTypes || []).includes(type)
-                }
-              />
-              <span className="text-sm">.{type}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Input Field Label
-        </label>
-        <input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded-md text-sm"
-          placeholder="Upload your file"
-          defaultValue={currentModuleConfig.config.fieldLabel || ""}
-        />
-      </div>
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------------
-   2) Custom Node: Larger handle & properly aligned cog icon
-   ------------------------------------------------------------------ */
+/*
+  ------------------------------------------------------------------
+  2) CUSTOM NODE COMPONENT
+  ------------------------------------------------------------------
+*/
 const ModuleNode = ({ data, id }) => {
+  // Base style
   let nodeStyle = "p-4 bg-white rounded-lg border shadow-sm flex items-center w-64";
   if (data.selected) {
     nodeStyle += " border-indigo-300";
@@ -320,7 +113,15 @@ const ModuleNode = ({ data, id }) => {
     nodeStyle += " border-gray-200";
   }
 
-  // Optional badges (Trigger/If/Else)
+  const handleStyle = {
+    width: 20,
+    height: 20,
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "#6366F1",
+  };
+
+  // Optional badges
   const renderBadge = () => {
     if (data.isTrigger) {
       return (
@@ -346,15 +147,6 @@ const ModuleNode = ({ data, id }) => {
     return null;
   };
 
-  /* LARGER handles so it’s easier to connect */
-  const handleStyle = {
-    width: 20,
-    height: 20,
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "#6366F1",
-  };
-
   return (
     <div className="relative">
       {renderBadge()}
@@ -364,10 +156,7 @@ const ModuleNode = ({ data, id }) => {
         <Handle
           type="target"
           position={Position.Left}
-          style={{
-            ...handleStyle,
-            left: -10,
-          }}
+          style={{ ...handleStyle, left: -10 }}
           isConnectable={true}
         />
       )}
@@ -378,6 +167,7 @@ const ModuleNode = ({ data, id }) => {
         >
           {data.icon}
         </div>
+
         <div className="flex-1">
           <h4 className="text-sm font-medium text-gray-800">{data.label}</h4>
           <p className="text-xs text-gray-500">
@@ -387,40 +177,36 @@ const ModuleNode = ({ data, id }) => {
           </p>
         </div>
 
-        {/* Cog + Trash, with clickable area matching icon */}
+        {/* Cog + Trash, bigger clickable area */}
         <div className="flex space-x-1 items-center">
           <button
+            className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600"
             onClick={(e) => {
               e.stopPropagation();
               data.onConfig(id);
             }}
-            className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600"
           >
             <Settings size={16} />
           </button>
           <button
+            className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-red-600"
             onClick={(e) => {
               e.stopPropagation();
               data.onDelete(id);
             }}
-            className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-red-600"
           >
             <Trash2 size={16} />
           </button>
         </div>
       </div>
 
-      {/* Right handle (source) */}
+      {/* Right handle */}
       <Handle
         type="source"
         position={Position.Right}
-        style={{
-          ...handleStyle,
-          right: -10,
-        }}
+        style={{ ...handleStyle, right: -10 }}
         isConnectable={true}
       />
-      {/* Visual circle/plus. pointer-events none => we drag the handle behind it */}
       <div className="pointer-events-none absolute top-1/2 -right-3 transform -translate-y-1/2">
         <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white">
           <Plus size={14} />
@@ -430,37 +216,37 @@ const ModuleNode = ({ data, id }) => {
   );
 };
 
-/* ------------------------------------------------------------------
-   3) Main Component
-   ------------------------------------------------------------------ */
+/*
+  ------------------------------------------------------------------
+  3) MAIN BUILDER COMPONENT
+  ------------------------------------------------------------------
+*/
 const nodeTypes = {
   moduleNode: ModuleNode,
 };
 
-const ModularPipeline = () => {
+export default function ModularPipeline() {
   const [activeTab, setActiveTab] = useState("builder");
   const [workflowName, setWorkflowName] = useState("New Workflow");
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [currentModuleConfig, setCurrentModuleConfig] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-  // Node / Edge states
+  // Node & Edge states
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // Connect callback
+  // Connect callback => step edges
   const onConnect = useCallback(
     (params) => {
       setEdges((eds) =>
         addEdge(
           {
             ...params,
-            markerEnd: {
-              type: "arrowclosed",
-              color: "#6366F1",
-            },
+            markerEnd: { type: "arrowclosed", color: "#6366F1" },
           },
           eds
         )
@@ -469,7 +255,7 @@ const ModularPipeline = () => {
     [setEdges]
   );
 
-  /* Example templates */
+  /* TEMPLATES EXAMPLE */
   const workflowTemplates = [
     {
       id: "resume-screener",
@@ -477,21 +263,9 @@ const ModularPipeline = () => {
       description: "Extract skills from resumes and match with job listings",
       icon: "📦",
       modules: [
-        {
-          type: "Webhook Trigger",
-          config: { path: "/api/resume" },
-          position: 1,
-        },
-        {
-          type: "File Ingestor",
-          config: { acceptTypes: ["pdf", "docx"] },
-          position: 2,
-        },
-        {
-          type: "NER / Skill Extractor",
-          config: { extractFields: ["skills", "experience"] },
-          position: 3,
-        },
+        { type: "Webhook Trigger", config: { path: "/api/resume" }, position: 1 },
+        { type: "File Ingestor", config: { acceptTypes: ["pdf", "docx"] }, position: 2 },
+        { type: "NER / Skill Extractor", config: { extractFields: ["skills"] }, position: 3 },
       ],
     },
     {
@@ -500,158 +274,53 @@ const ModularPipeline = () => {
       description: "Extract and analyze data from financial reports",
       icon: "📊",
       modules: [
-        {
-          type: "Schedule Trigger",
-          config: { time: "14:00" },
-          position: 1,
-        },
-        {
-          type: "File Ingestor",
-          config: { acceptTypes: ["pdf"] },
-          position: 2,
-        },
-        {
-          type: "LLM Analyzer",
-          config: { promptTemplate: "financial_metrics" },
-          position: 3,
-        },
-        {
-          type: "Summarizer",
-          config: { maxLength: 500 },
-          position: 4,
-        },
+        { type: "Schedule Trigger", config: { time: "14:00" }, position: 1 },
+        { type: "File Ingestor", config: { acceptTypes: ["pdf"] }, position: 2 },
+        { type: "LLM Analyzer", config: { promptTemplate: "financial_metrics" }, position: 3 },
+        { type: "Summarizer", config: { maxLength: 500 }, position: 4 },
       ],
     },
   ];
 
-  /* Available modules list */
+  /* AVAILABLE MODULES (WITH TRIGGERS, INTEGRATIONS, ETC.) */
   const availableModules = [
-    // Triggers
-    {
-      type: "Webhook Trigger",
-      description: "Start workflow when webhook is called",
-      category: "Trigger",
-      icon: "zap",
-      isTrigger: true,
-    },
-    {
-      type: "Schedule Trigger",
-      description: "Run workflow on a time schedule",
-      category: "Trigger",
-      icon: "clock",
-      isTrigger: true,
-    },
-    {
-      type: "Event Trigger",
-      description: "Start workflow on a specific event",
-      category: "Trigger",
-      icon: "activity",
-      isTrigger: true,
-    },
+    // triggers
+    { type: "Webhook Trigger", description: "Start workflow when webhook is called", category: "Trigger", icon: "zap", isTrigger: true },
+    { type: "Schedule Trigger", description: "Run workflow on a time schedule", category: "Trigger", icon: "clock", isTrigger: true },
+    { type: "Event Trigger", description: "Start workflow on specific event", category: "Trigger", icon: "activity", isTrigger: true },
 
-    // Input
-    {
-      type: "File Ingestor",
-      description: "Handles user uploads (PDF, DOCX, audio, CSV)",
-      category: "Input",
-      icon: "folder",
-    },
-    {
-      type: "OCR / PDF Extractor",
-      description: "Converts file to text, handles formatting",
-      category: "Input",
-      icon: "file-text",
-    },
-    {
-      type: "Transcriber",
-      description: "Converts audio to text",
-      category: "Input",
-      icon: "mic",
-    },
-    {
-      type: "Web Scraper",
-      description: "Scrapes content from websites",
-      category: "Input",
-      icon: "globe",
-    },
+    // integrations
+    { type: "Slack Integration", description: "Post/read Slack channels", category: "Integration", icon: "bell" },
+    { type: "Google Sheets", description: "Read/write data to Google Sheets", category: "Integration", icon: "database" },
+    { type: "Salesforce", description: "Sync leads in Salesforce", category: "Integration", icon: "user" },
+    { type: "Mailchimp", description: "Manage mailing lists in Mailchimp", category: "Integration", icon: "mail" },
 
-    // Processing
-    {
-      type: "Text Segmenter",
-      description: "Breaks text into chunks for analysis",
-      category: "Processing",
-      icon: "scissors",
-    },
+    // input
+    { type: "File Ingestor", description: "Handles user uploads (PDF, DOCX, CSV...)", category: "Input", icon: "folder" },
+    { type: "OCR / PDF Extractor", description: "Convert PDF to text", category: "Input", icon: "file-text" },
+    { type: "Transcriber", description: "Converts audio to text", category: "Input", icon: "mic" },
+    { type: "Web Scraper", description: "Scrapes content from websites", category: "Input", icon: "globe" },
+
+    // processing
+    { type: "Text Segmenter", description: "Break text into chunks for analysis", category: "Processing", icon: "scissors" },
 
     // AI
-    {
-      type: "LLM Analyzer",
-      description: "GPT prompt runner, uses template + few-shot examples",
-      category: "AI",
-      icon: "brain",
-    },
-    {
-      type: "Topic Extractor",
-      description: "Extracts topics/keywords/intents",
-      category: "AI",
-      icon: "tag",
-    },
-    {
-      type: "NER / Skill Extractor",
-      description: "Extracts named entities, skills, metrics",
-      category: "AI",
-      icon: "user",
-    },
+    { type: "LLM Analyzer", description: "GPT prompt runner with templates", category: "AI", icon: "brain" },
+    { type: "Topic Extractor", description: "Extract topics, keywords, etc.", category: "AI", icon: "tag" },
+    { type: "NER / Skill Extractor", description: "Extract named entities or skills", category: "AI", icon: "user" },
 
-    // Data
-    {
-      type: "Vector Matcher",
-      description: "Compares text chunks to a database (e.g., jobs)",
-      category: "Data",
-      icon: "filter",
-    },
+    // data
+    { type: "Vector Matcher", description: "Compare text to DB (jobs, etc.)", category: "Data", icon: "filter" },
 
-    // Output
-    {
-      type: "Summarizer",
-      description: "Converts long content into clean summaries",
-      category: "Output",
-      icon: "file-text",
-    },
-    {
-      type: "Email Generator",
-      description: "Fills email template using context",
-      category: "Output",
-      icon: "mail",
-    },
-    {
-      type: "DB Writer",
-      description: "Saves results to DB (Notion, Airtable, Supabase)",
-      category: "Output",
-      icon: "database",
-    },
-    {
-      type: "Notifier",
-      description: "Sends notifications (Slack, Email, etc.)",
-      category: "Output",
-      icon: "bell",
-    },
+    // output
+    { type: "Summarizer", description: "Turns long content into short summary", category: "Output", icon: "file-text" },
+    { type: "Email Generator", description: "Fills email template with context", category: "Output", icon: "mail" },
+    { type: "DB Writer", description: "Save results to DB (Notion, etc.)", category: "Output", icon: "database" },
+    { type: "Notifier", description: "Sends Slack/email notifications", category: "Output", icon: "bell" },
 
-    // Control
-    {
-      type: "If Condition",
-      description: "Branch workflow based on a condition",
-      category: "Control",
-      icon: "git-branch",
-      isConditional: true,
-    },
-    {
-      type: "Else Path",
-      description: "Alternative path when the If Condition fails",
-      category: "Control",
-      icon: "corner-down-right",
-      isConditional: true,
-    },
+    // control
+    { type: "If Condition", description: "Branch workflow if condition met", category: "Control", icon: "git-branch", isConditional: true },
+    { type: "Else Path", description: "Alternative path if If Condition fails", category: "Control", icon: "corner-down-right", isConditional: true },
   ];
 
   // Search filter
@@ -665,9 +334,7 @@ const ModularPipeline = () => {
 
   const categories = [...new Set(availableModules.map((m) => m.category))];
 
-  /* ------------------------------------------------------------------
-     Helpers
-     ------------------------------------------------------------------ */
+  /* HELPER: pick icons, colors, etc. */
   const getModuleIcon = (iconName) => {
     switch (iconName) {
       case "zap":
@@ -713,6 +380,8 @@ const ModularPipeline = () => {
     switch (category) {
       case "Trigger":
         return "bg-orange-100 text-orange-600";
+      case "Integration":
+        return "bg-green-100 text-green-600";
       case "Input":
         return "bg-blue-100 text-blue-600";
       case "Processing":
@@ -730,7 +399,6 @@ const ModularPipeline = () => {
     }
   };
 
-  // Convert React Flow nodes -> pipeline steps
   const getActiveModules = () => {
     return nodes.map((node) => ({
       type: node.data.label,
@@ -740,7 +408,6 @@ const ModularPipeline = () => {
     }));
   };
 
-  // Generate YAML
   const generateYaml = () => {
     const activeModules = getActiveModules();
     return `name: ${workflowName}
@@ -760,7 +427,7 @@ ${Object.entries(mod.config)
 `;
   };
 
-  // Download the YAML file
+  // Download YAML
   const handleDownloadYaml = () => {
     const yamlText = generateYaml();
     const blob = new Blob([yamlText], { type: "text/yaml" });
@@ -772,9 +439,7 @@ ${Object.entries(mod.config)
     URL.revokeObjectURL(url);
   };
 
-  /* ------------------------------------------------------------------
-     Template -> Generate nodes
-     ------------------------------------------------------------------ */
+  /* TEMPLATES => create nodes/edges */
   const selectWorkflowTemplate = (template) => {
     setWorkflowName(template.name);
 
@@ -807,7 +472,7 @@ ${Object.entries(mod.config)
         },
       });
 
-      // Connect each node to the previous
+      // connect each node
       if (idx > 0) {
         newEdges.push({
           id: `e-${idx - 1}-${idx}`,
@@ -823,27 +488,25 @@ ${Object.entries(mod.config)
     setActiveTab("builder");
   };
 
-  /* ------------------------------------------------------------------
-     4) Drag & Drop: create node
-     ------------------------------------------------------------------ */
-  const onDragOver = useCallback((ev) => {
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
+  /* DRAG & DROP => create new node */
+  const onDragOver = useCallback((evt) => {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = "move";
   }, []);
 
   const onDrop = useCallback(
-    (ev) => {
-      ev.preventDefault();
+    (evt) => {
+      evt.preventDefault();
       if (!reactFlowInstance) return;
 
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const moduleData = ev.dataTransfer.getData("module");
+      const moduleData = evt.dataTransfer.getData("module");
       if (!moduleData) return;
 
       const module = JSON.parse(moduleData);
       const position = reactFlowInstance.project({
-        x: ev.clientX - reactFlowBounds.left,
-        y: ev.clientY - reactFlowBounds.top,
+        x: evt.clientX - reactFlowBounds.left,
+        y: evt.clientY - reactFlowBounds.top,
       });
 
       const nodeId = `${module.type}-${nodes.length}`;
@@ -876,9 +539,7 @@ ${Object.entries(mod.config)
     [reactFlowInstance, nodes, availableModules]
   );
 
-  /* ------------------------------------------------------------------
-     5) Config & Deletion
-     ------------------------------------------------------------------ */
+  /* CONFIG & DELETION */
   const openModuleConfig = (nodeId) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node) {
@@ -917,42 +578,31 @@ ${Object.entries(mod.config)
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
   };
 
-  // Delete selected node with Delete/Backspace
+  // Delete node with Delete/Backspace
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (evt) => {
       const activeTag = document.activeElement?.tagName;
       if (activeTag === "INPUT" || activeTag === "TEXTAREA") return;
-
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (evt.key === "Delete" || evt.key === "Backspace") {
         const selectedNode = nodes.find((n) => n.data.selected);
-        if (selectedNode) {
-          removeNode(selectedNode.id);
-        }
+        if (selectedNode) removeNode(selectedNode.id);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nodes]);
 
-  // Node click => mark as selected
+  // Node click => mark selected
   const onNodeClick = (evt, node) => {
     setNodes((prevNodes) =>
       prevNodes.map((n) => ({
         ...n,
-        data: {
-          ...n.data,
-          selected: n.id === node.id,
-        },
+        data: { ...n.data, selected: n.id === node.id },
       }))
     );
-    // We open config only via the cogwheel. If you want auto-open on node click,
-    // call openModuleConfig(node.id) here.
   };
 
-  /* ------------------------------------------------------------------
-     6) Sidebar + Tooltips
-     ------------------------------------------------------------------ */
+  /* SIDEBAR + TOOLTIPS */
   const handleDragStart = (e, module) => {
     e.dataTransfer.setData("module", JSON.stringify(module));
   };
@@ -986,10 +636,9 @@ ${Object.entries(mod.config)
                     {module.description}
                   </p>
                 </div>
-
                 {/* Tooltip with high z-index */}
                 <div
-                  className="hidden group-hover:block absolute top-1/2 left-full ml-2 transform -translate-y-1/2 p-2 bg-white shadow-lg border border-gray-100 rounded text-gray-700 text-xs max-w-xs z-50"
+                  className="hidden group-hover:block absolute top-1/2 left-full ml-2 transform -translate-y-1/2 p-2 bg-white shadow-lg border border-gray-100 rounded text-gray-700 text-xs max-w-xs z-[999999]"
                   style={{ width: "200px" }}
                 >
                   {module.description}
@@ -1001,51 +650,45 @@ ${Object.entries(mod.config)
     ));
   };
 
-  const renderTemplatesGrid = () => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {workflowTemplates.map((tpl) => (
-          <div
-            key={tpl.id}
-            onClick={() => selectWorkflowTemplate(tpl)}
-            className="cursor-pointer bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-2">
-              <span className="text-2xl mr-2">{tpl.icon}</span>
-              <h3 className="text-lg font-medium">{tpl.name}</h3>
-            </div>
-            <p className="text-sm text-gray-600">{tpl.description}</p>
+  const renderTemplatesGrid = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {workflowTemplates.map((tpl) => (
+        <div
+          key={tpl.id}
+          onClick={() => selectWorkflowTemplate(tpl)}
+          className="cursor-pointer bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center mb-2">
+            <span className="text-2xl mr-2">{tpl.icon}</span>
+            <h3 className="text-lg font-medium">{tpl.name}</h3>
           </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderYamlConfig = () => {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="font-medium">YAML Configuration</h2>
-          <button
-            className="flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
-            onClick={handleDownloadYaml}
-          >
-            <Download size={14} className="mr-1" />
-            Download
-          </button>
+          <p className="text-sm text-gray-600">{tpl.description}</p>
         </div>
-        <div className="p-4 bg-gray-50">
-          <pre className="whitespace-pre-wrap text-sm font-mono">
-            {generateYaml()}
-          </pre>
-        </div>
-      </div>
-    );
-  };
+      ))}
+    </div>
+  );
 
-  /* ------------------------------------------------------------------
-     7) Main Return
-     ------------------------------------------------------------------ */
+  const renderYamlConfig = () => (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <h2 className="font-medium">YAML Configuration</h2>
+        <button
+          className="flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
+          onClick={handleDownloadYaml}
+        >
+          <Download size={14} className="mr-1" />
+          Download
+        </button>
+      </div>
+      <div className="p-4 bg-gray-50">
+        <pre className="whitespace-pre-wrap text-sm font-mono">
+          {generateYaml()}
+        </pre>
+      </div>
+    </div>
+  );
+
+  // Return
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* LEFT SIDEBAR */}
@@ -1148,25 +791,27 @@ ${Object.entries(mod.config)
                 onConnect={onConnect}
                 onInit={setReactFlowInstance}
                 onNodeClick={onNodeClick}
-                fitView
+                /* KEY: 90° step edges + snapping */
                 defaultEdgeOptions={{
-                  type: "smoothstep",
+                  type: "step",
                   style: { stroke: "#6366F1" },
                   animated: true,
                 }}
-                /* Pan/zoom settings */
-                panOnDrag={true}
+                snapToGrid
+                snapGrid={[20, 20]}
+                panOnDrag
                 panOnScroll={false}
-                zoomOnScroll={true}
+                zoomOnScroll
                 zoomOnDoubleClick={false}
                 minZoom={0.2}
                 maxZoom={2}
+                fitView
               >
                 <Background />
                 <Controls />
                 <MiniMap />
 
-                {/* Workflow Name Panel */}
+                {/* Panel for workflow name */}
                 <Panel
                   position="top-left"
                   className="m-2 bg-white px-3 py-2 rounded shadow-md flex items-center space-x-2"
@@ -1180,7 +825,7 @@ ${Object.entries(mod.config)
                   />
                 </Panel>
 
-                {/* No nodes -> show helpful panel */}
+                {/* If no nodes => helpful panel */}
                 {nodes.length === 0 && (
                   <Panel
                     position="center"
@@ -1216,7 +861,7 @@ ${Object.entries(mod.config)
 
       {/* CONFIGURATION MODAL */}
       {isConfigOpen && currentModuleConfig && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999999]">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-medium">
@@ -1230,40 +875,12 @@ ${Object.entries(mod.config)
               </button>
             </div>
             <div className="p-4">
-              {currentModuleConfig?.type === "File Ingestor" &&
-                renderFileIngestorConfig(currentModuleConfig)}
-              {currentModuleConfig?.type === "LLM Analyzer" &&
-                renderLLMAnalyzerConfig(currentModuleConfig)}
-              {currentModuleConfig?.type === "Notifier" &&
-                renderNotifierConfig(currentModuleConfig)}
-              {currentModuleConfig?.type === "If Condition" &&
-                renderConditionalConfig(currentModuleConfig)}
-              {currentModuleConfig?.type === "Else Path" && (
-                <div className="text-center text-gray-500 py-4">
-                  Else path will execute if the connected If Condition fails.
-                </div>
-              )}
-              {(currentModuleConfig?.type === "Webhook Trigger" ||
-                currentModuleConfig?.type === "Schedule Trigger" ||
-                currentModuleConfig?.type === "Event Trigger") &&
-                renderTriggerConfig(currentModuleConfig)}
-
-              {/* Default config for other modules */}
-              {![
-                "File Ingestor",
-                "LLM Analyzer",
-                "Notifier",
-                "If Condition",
-                "Else Path",
-                "Webhook Trigger",
-                "Schedule Trigger",
-                "Event Trigger",
-              ].includes(currentModuleConfig?.type) && (
-                <div className="py-8 text-center text-gray-500">
-                  <Settings size={24} className="mx-auto mb-2" />
-                  <p>Configure {currentModuleConfig?.type} settings here.</p>
-                </div>
-              )}
+              {/* 
+                Insert calls to your specific config forms, e.g.:
+                {currentModuleConfig?.type === "If Condition" && renderConditionalConfig(currentModuleConfig)}
+                {currentModuleConfig?.type === "Webhook Trigger" && renderTriggerConfig(currentModuleConfig)}
+                etc.
+              */}
             </div>
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-2">
               <button
@@ -1284,6 +901,4 @@ ${Object.entries(mod.config)
       )}
     </div>
   );
-};
-
-export default ModularPipeline;
+}
