@@ -46,10 +46,9 @@ import {
 
 /* 
   ------------------------------------------------------------------
-  1) MODULE-SPECIFIC CONFIGURATION FORMS (shortened for brevity)
+  1) MODULE-SPECIFIC CONFIGURATION FORMS
   ------------------------------------------------------------------
 */
-
 const renderConditionalConfig = (currentModuleConfig) => {
   if (!currentModuleConfig) return null;
 
@@ -59,7 +58,13 @@ const renderConditionalConfig = (currentModuleConfig) => {
         <label className="block text-sm font-medium text-gray-700">
           Condition Type
         </label>
-        <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
+        <select
+          className="w-full p-2 border border-gray-300 rounded-md text-sm"
+          value={currentModuleConfig.config.conditionType || "Contains Text"}
+          onChange={(e) =>
+            currentModuleConfig.handleConfigChange("conditionType", e.target.value)
+          }
+        >
           <option>Contains Text</option>
           <option>Greater Than</option>
           <option>Less Than</option>
@@ -75,7 +80,10 @@ const renderConditionalConfig = (currentModuleConfig) => {
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md text-sm"
           placeholder="Enter value or variable"
-          defaultValue={currentModuleConfig.config.valueToCheck || ""}
+          value={currentModuleConfig.config.valueToCheck || ""}
+          onChange={(e) =>
+            currentModuleConfig.handleConfigChange("valueToCheck", e.target.value)
+          }
         />
       </div>
       <div className="space-y-2">
@@ -86,17 +94,17 @@ const renderConditionalConfig = (currentModuleConfig) => {
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md text-sm"
           placeholder="Enter comparison value"
-          defaultValue={currentModuleConfig.config.conditionValue || ""}
+          value={currentModuleConfig.config.conditionValue || ""}
+          onChange={(e) =>
+            currentModuleConfig.handleConfigChange("conditionValue", e.target.value)
+          }
         />
       </div>
     </div>
   );
 };
 
-// Add similar “renderXYZConfig()” functions for other module types (Trigger, LLM, Notifier, etc.)
-
-/*
-  ------------------------------------------------------------------
+/* ------------------------------------------------------------------
   2) CUSTOM NODE COMPONENT
   ------------------------------------------------------------------
 */
@@ -183,6 +191,7 @@ const ModuleNode = ({ data, id }) => {
             className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600"
             onClick={(e) => {
               e.stopPropagation();
+              console.log("Cogwheel clicked for node:", id); // ADDED LOG
               data.onConfig(id);
             }}
           >
@@ -238,7 +247,10 @@ export default function ModularPipeline() {
   // Node & Edge states
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
+  const nodesRef = useRef(nodes);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
   // Connect callback => step edges
   const onConnect = useCallback(
     (params) => {
@@ -263,7 +275,7 @@ export default function ModularPipeline() {
       description: "Extract skills from resumes and match with job listings",
       icon: "📦",
       modules: [
-        { type: "Webhook Trigger", config: { path: "/api/resume" }, position: 1 },
+        { type: "Webhook Trigger", config: { path: "/api/resume", method: "POST" }, position: 1 },
         { type: "File Ingestor", config: { acceptTypes: ["pdf", "docx"] }, position: 2 },
         { type: "NER / Skill Extractor", config: { extractFields: ["skills"] }, position: 3 },
       ],
@@ -288,36 +300,29 @@ export default function ModularPipeline() {
     { type: "Webhook Trigger", description: "Start workflow when webhook is called", category: "Trigger", icon: "zap", isTrigger: true },
     { type: "Schedule Trigger", description: "Run workflow on a time schedule", category: "Trigger", icon: "clock", isTrigger: true },
     { type: "Event Trigger", description: "Start workflow on specific event", category: "Trigger", icon: "activity", isTrigger: true },
-
     // integrations
     { type: "Slack Integration", description: "Post/read Slack channels", category: "Integration", icon: "bell" },
     { type: "Google Sheets", description: "Read/write data to Google Sheets", category: "Integration", icon: "database" },
     { type: "Salesforce", description: "Sync leads in Salesforce", category: "Integration", icon: "user" },
     { type: "Mailchimp", description: "Manage mailing lists in Mailchimp", category: "Integration", icon: "mail" },
-
     // input
     { type: "File Ingestor", description: "Handles user uploads (PDF, DOCX, CSV...)", category: "Input", icon: "folder" },
     { type: "OCR / PDF Extractor", description: "Convert PDF to text", category: "Input", icon: "file-text" },
     { type: "Transcriber", description: "Converts audio to text", category: "Input", icon: "mic" },
     { type: "Web Scraper", description: "Scrapes content from websites", category: "Input", icon: "globe" },
-
     // processing
     { type: "Text Segmenter", description: "Break text into chunks for analysis", category: "Processing", icon: "scissors" },
-
     // AI
     { type: "LLM Analyzer", description: "GPT prompt runner with templates", category: "AI", icon: "brain" },
     { type: "Topic Extractor", description: "Extract topics, keywords, etc.", category: "AI", icon: "tag" },
     { type: "NER / Skill Extractor", description: "Extract named entities or skills", category: "AI", icon: "user" },
-
     // data
     { type: "Vector Matcher", description: "Compare text to DB (jobs, etc.)", category: "Data", icon: "filter" },
-
     // output
     { type: "Summarizer", description: "Turns long content into short summary", category: "Output", icon: "file-text" },
     { type: "Email Generator", description: "Fills email template with context", category: "Output", icon: "mail" },
     { type: "DB Writer", description: "Save results to DB (Notion, etc.)", category: "Output", icon: "database" },
     { type: "Notifier", description: "Sends Slack/email notifications", category: "Output", icon: "bell" },
-
     // control
     { type: "If Condition", description: "Branch workflow if condition met", category: "Control", icon: "git-branch", isConditional: true },
     { type: "Else Path", description: "Alternative path if If Condition fails", category: "Control", icon: "corner-down-right", isConditional: true },
@@ -423,8 +428,7 @@ ${Object.entries(mod.config)
   .map(([k, v]) => `      ${k}: ${JSON.stringify(v)}`)
   .join("\n")}`
   )
-  .join("\n")}
-`;
+  .join("\n")}`;
   };
 
   // Download YAML
@@ -434,7 +438,8 @@ ${Object.entries(mod.config)
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = workflowName.replace(/\s+/g, "_").toLowerCase() + ".yaml";
+    link.download =
+      workflowName.replace(/\s+/g, "_").toLowerCase() + ".yaml";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -541,14 +546,19 @@ ${Object.entries(mod.config)
 
   /* CONFIG & DELETION */
   const openModuleConfig = (nodeId) => {
-    const node = nodes.find((n) => n.id === nodeId);
+    console.log("openModuleConfig triggered for node:", nodeId); // ADDED LOG
+    console.log("Current nodes state:", nodesRef.current); // ADDED LOG
+    const node = nodesRef.current.find((n) => n.id === nodeId);
     if (node) {
+      console.log("if node true for node:", nodeId);
+      // Include the handleConfigChange method so config forms can update state
       setCurrentModuleConfig({
         id: nodeId,
         type: node.data.label,
         config: node.data.config || {},
         icon: node.data.iconName,
         category: node.data.category,
+        handleConfigChange, // pass the change handler for config inputs
       });
       setIsConfigOpen(true);
     }
@@ -575,7 +585,9 @@ ${Object.entries(mod.config)
 
   const removeNode = (nodeId) => {
     setNodes((nds) => nds.filter((n) => n.id !== nodeId));
-    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    setEdges((eds) =>
+      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+    );
   };
 
   // Delete node with Delete/Backspace
@@ -688,7 +700,440 @@ ${Object.entries(mod.config)
     </div>
   );
 
-  // Return
+  /* ------------------------------------------------------------------
+     CONFIGURATION HANDLER & RENDERING
+     ------------------------------------------------------------------ */
+  const handleConfigChange = (key, value) => {
+    setCurrentModuleConfig((prev) => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        [key]: value,
+      },
+    }));
+  };
+
+  const renderModuleConfig = () => {
+    if (!currentModuleConfig) return null;
+    const { type, config } = currentModuleConfig;
+    switch (type) {
+      case "If Condition":
+        return renderConditionalConfig(currentModuleConfig);
+      case "Webhook Trigger":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Endpoint Path
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.path || ""}
+                onChange={(e) =>
+                  handleConfigChange("path", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                HTTP Method
+              </label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.method || "POST"}
+                onChange={(e) =>
+                  handleConfigChange("method", e.target.value)
+                }
+              >
+                <option>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+              </select>
+            </div>
+          </div>
+        );
+      case "Schedule Trigger":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Schedule Time
+              </label>
+              <input
+                type="time"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.time || ""}
+                onChange={(e) =>
+                  handleConfigChange("time", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Event Trigger":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Event Name
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.eventName || ""}
+                onChange={(e) =>
+                  handleConfigChange("eventName", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Slack Integration":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Webhook URL
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.webhookUrl || ""}
+                onChange={(e) =>
+                  handleConfigChange("webhookUrl", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Channel
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.channel || ""}
+                onChange={(e) =>
+                  handleConfigChange("channel", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Google Sheets":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Sheet ID
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.sheetId || ""}
+                onChange={(e) =>
+                  handleConfigChange("sheetId", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Salesforce":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                API Key
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.apiKey || ""}
+                onChange={(e) =>
+                  handleConfigChange("apiKey", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Mailchimp":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                API Key
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.apiKey || ""}
+                onChange={(e) =>
+                  handleConfigChange("apiKey", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "File Ingestor":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Accepted File Types (comma separated)
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={
+                  config.acceptTypes ? config.acceptTypes.join(",") : ""
+                }
+                onChange={(e) =>
+                  handleConfigChange("acceptTypes", e.target.value.split(","))
+                }
+              />
+            </div>
+          </div>
+        );
+      case "OCR / PDF Extractor":
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              No additional configuration required.
+            </p>
+          </div>
+        );
+      case "Transcriber":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Language
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.language || ""}
+                onChange={(e) =>
+                  handleConfigChange("language", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Web Scraper":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Target URL
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.targetUrl || ""}
+                onChange={(e) =>
+                  handleConfigChange("targetUrl", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Text Segmenter":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Chunk Size
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.chunkSize || 0}
+                onChange={(e) =>
+                  handleConfigChange("chunkSize", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "LLM Analyzer":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Prompt Template
+              </label>
+              <textarea
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.promptTemplate || ""}
+                onChange={(e) =>
+                  handleConfigChange("promptTemplate", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Topic Extractor":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Number of Topics
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.numTopics || 0}
+                onChange={(e) =>
+                  handleConfigChange("numTopics", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "NER / Skill Extractor":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Fields to Extract (comma separated)
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.extractFields ? config.extractFields.join(",") : ""}
+                onChange={(e) =>
+                  handleConfigChange("extractFields", e.target.value.split(","))
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Vector Matcher":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Similarity Threshold
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.threshold || 0}
+                onChange={(e) =>
+                  handleConfigChange("threshold", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Summarizer":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Max Length
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.maxLength || 0}
+                onChange={(e) =>
+                  handleConfigChange("maxLength", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Email Generator":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Email Subject
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.emailSubject || ""}
+                onChange={(e) =>
+                  handleConfigChange("emailSubject", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Email Body Template
+              </label>
+              <textarea
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.emailBody || ""}
+                onChange={(e) =>
+                  handleConfigChange("emailBody", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "DB Writer":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Database Connection String
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.connectionString || ""}
+                onChange={(e) =>
+                  handleConfigChange("connectionString", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Notifier":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Notification Message
+              </label>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                value={config.notificationMessage || ""}
+                onChange={(e) =>
+                  handleConfigChange("notificationMessage", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        );
+      case "Else Path":
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              No configuration required for Else Path.
+            </p>
+          </div>
+        );
+      default:
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              No configuration available for this module type.
+            </p>
+          </div>
+        );
+    }
+  };
+
+  /* ------------------------------------------------------------------
+     FINAL RENDERING
+     ------------------------------------------------------------------ */
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* LEFT SIDEBAR */}
@@ -791,7 +1236,6 @@ ${Object.entries(mod.config)
                 onConnect={onConnect}
                 onInit={setReactFlowInstance}
                 onNodeClick={onNodeClick}
-                /* KEY: 90° step edges + snapping */
                 defaultEdgeOptions={{
                   type: "step",
                   style: { stroke: "#6366F1" },
@@ -839,8 +1283,7 @@ ${Object.entries(mod.config)
                         Start Building Your Workflow
                       </h3>
                       <p className="text-sm text-gray-500 max-w-md">
-                        Drag modules from the sidebar and drop them here to
-                        create your workflow pipeline.
+                        Drag modules from the sidebar and drop them here to create your workflow pipeline.
                       </p>
                     </div>
                   </Panel>
@@ -875,12 +1318,7 @@ ${Object.entries(mod.config)
               </button>
             </div>
             <div className="p-4">
-              {/* 
-                Insert calls to your specific config forms, e.g.:
-                {currentModuleConfig?.type === "If Condition" && renderConditionalConfig(currentModuleConfig)}
-                {currentModuleConfig?.type === "Webhook Trigger" && renderTriggerConfig(currentModuleConfig)}
-                etc.
-              */}
+              {renderModuleConfig()}
             </div>
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-2">
               <button
