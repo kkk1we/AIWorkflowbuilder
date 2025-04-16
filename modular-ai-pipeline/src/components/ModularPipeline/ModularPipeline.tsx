@@ -248,9 +248,34 @@ export default function ModularPipeline() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const nodesRef = useRef(nodes);
+  //available blocks
+  const [availableBackendBlocks, setAvailableBackendBlocks] = useState([]);
+  const [blockConfigSchemas, setBlockConfigSchemas] = useState({});
+
+  useEffect(() => {
+    fetch("/api/blocks/config")
+      .then((res) => res.json())
+      .then((data) => {
+        const schemaMap = {};
+        data.forEach(({ id, fields }) => {
+          schemaMap[id] = fields;
+        });
+        setBlockConfigSchemas(schemaMap);
+      });     
+  }, []);
+
+  console.log(blockConfigSchemas)
+  //then replace 
+
+  useEffect(() => {
+    fetch("/api/blocks/available")
+      .then(res => res.json())
+      .then(setAvailableBackendBlocks);
+  }, []);
   useEffect(() => {
     nodesRef.current = nodes;
   }, [nodes]);
+
   // Connect callback => step edges
   const onConnect = useCallback(
     (params) => {
@@ -295,6 +320,7 @@ export default function ModularPipeline() {
   ];
 
   /* AVAILABLE MODULES (WITH TRIGGERS, INTEGRATIONS, ETC.) */
+  
   const availableModules = [
     // triggers
     { type: "Webhook Trigger", description: "Start workflow when webhook is called", category: "Trigger", icon: "zap", isTrigger: true },
@@ -327,6 +353,18 @@ export default function ModularPipeline() {
     { type: "If Condition", description: "Branch workflow if condition met", category: "Control", icon: "git-branch", isConditional: true },
     { type: "Else Path", description: "Alternative path if If Condition fails", category: "Control", icon: "corner-down-right", isConditional: true },
   ];
+  const allModules = availableModules.map((mod) => ({
+    ...mod,
+    // Convert UI-friendly names to backend IDs
+    id: mod.type.toLowerCase().replace(/\s+/g, "."),  // e.g. "Slack Integration" → "slack.integration"
+  }));
+  const mergedModules = allModules.map((mod) => ({
+    ...mod,
+    available: availableBackendBlocks.includes(mod.id)
+  }));
+  
+  console.log(allModules);
+  console.log(mergedModules);
 
   // Search filter
   const filteredModules = searchTerm
@@ -549,6 +587,8 @@ ${Object.entries(mod.config)
     console.log("openModuleConfig triggered for node:", nodeId); // ADDED LOG
     console.log("Current nodes state:", nodesRef.current); // ADDED LOG
     const node = nodesRef.current.find((n) => n.id === nodeId);
+    
+    const schemaFields = blockConfigSchemas[node.data.label]; // 👈 label = "PromptBlock"
     if (node) {
       console.log("if node true for node:", nodeId);
       // Include the handleConfigChange method so config forms can update state
@@ -558,6 +598,7 @@ ${Object.entries(mod.config)
         config: node.data.config || {},
         icon: node.data.iconName,
         category: node.data.category,
+        fields:schemaFields,
         handleConfigChange, // pass the change handler for config inputs
       });
       setIsConfigOpen(true);
