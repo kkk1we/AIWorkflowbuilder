@@ -2,6 +2,8 @@ import { z } from "zod";
 import { callLLM, callLLMStream } from "../../../services/openai";
 import { Block } from "../types";
 
+// src/core/blocks/builtins/llmAnalyzer.ts (or similar)
+
 const configSchema = z.object({
   model: z.string(),
   prompt: z.string(),
@@ -15,8 +17,8 @@ export const PromptBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "llm.analyzer",
-  displayName: "Prompt GPT",
+  id: "llm.analyzer", // matches frontend block ID
+  displayName: "LLM Analyzer",
   inputs: ["input"],
   outputs: ["output"],
   configSchema,
@@ -32,7 +34,7 @@ export const PromptBlock: Block<
       })) {
         yield { output: chunk };
       }
-      return { output: "" }; // ✅ satisfies return type
+      return { output: "" };
     } else {
       const result = await callLLM({
         model: config.model,
@@ -41,9 +43,9 @@ export const PromptBlock: Block<
         stream: false,
       });
 
-      // ✅ Explicitly ensure it's a string
       return { output: typeof result === "string" ? result : "" };
     }
   },
 };
+
 module.exports = { PromptBlock }; // for CommonJS

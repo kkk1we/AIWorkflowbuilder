@@ -1,33 +1,41 @@
-import { ZodTypeAny } from "zod";
+import {
+  ZodTypeAny,
+  ZodObject,
+  ZodString,
+  ZodNumber,
+  ZodBoolean,
+  ZodRawShape,
+} from "zod";
 
-export function zodToFields(zodType: unknown): any {
-  const z = zodType as ZodTypeAny; // 👈 Tell TS this is a Zod schema
+type FieldType = "string" | "number" | "boolean" | "unknown";
 
-  if ("_def" in z) {
-    const def = z._def;
+interface FieldSchema {
+  type: FieldType;
+  required: boolean;
+}
 
-    switch (def.typeName) {
-      case "ZodNumber":
-        const typeInfo: any = { type: "number" };
-        if (def.minValue !== undefined) typeInfo.min = def.minValue;
-        if (def.maxValue !== undefined) typeInfo.max = def.maxValue;
-        return typeInfo;
+export function zodToFields(schema: ZodTypeAny): Record<string, FieldSchema> {
+  const fields: Record<string, FieldSchema> = {};
 
-      case "ZodEnum":
-        return {
-          type: "select",
-          options: def.values,
-        };
+  if (!(schema instanceof ZodObject)) return fields;
 
-      case "ZodString":
-        return { type: "string" };
+  const shape = (schema._def.shape() ?? {}) as ZodRawShape;
 
-      case "ZodBoolean":
-        return { type: "boolean" };
+  for (const [key, def] of Object.entries(shape)) {
+    const fieldSchema: FieldSchema = {
+      type: getFieldType(def),
+      required: !def.isOptional?.(), // safe check for optional fields
+    };
 
-      // Add more cases as needed...
-    }
+    fields[key] = fieldSchema;
   }
 
-  return { type: "string" }; // fallback
+  return fields;
+}
+
+function getFieldType(def: ZodTypeAny): FieldType {
+  if (def instanceof ZodString) return "string";
+  if (def instanceof ZodNumber) return "number";
+  if (def instanceof ZodBoolean) return "boolean";
+  return "unknown";
 }

@@ -326,19 +326,29 @@ export default function ModularPipeline() {
         return res.json();
       })
       .then((data) => {
+        // 1. Extract backend block IDs
         const availableBackendBlocks = data.map((item) => item.id);
         console.log("✅ Available backend blocks:", availableBackendBlocks);
-
+  
+        // 2. Build schema map
+        const schemaMap = {};
+        data.forEach(({ id, fields }) => {
+          schemaMap[id] = fields;
+        });
+        console.log("✅ Schema map:", schemaMap);
+        setBlockConfigSchemas(schemaMap);
+  
+        // 3. Merge availability with frontend base modules
         const allModules = baseModules.map((mod) => ({
           ...mod,
           id: mod.type.toLowerCase().replace(/\s+/g, "."),
         }));
-
+  
         const mergedModules = allModules.map((mod) => ({
           ...mod,
           available: availableBackendBlocks.includes(mod.id),
         }));
-
+  
         console.log("✅ Merged modules with availability:", mergedModules);
         setAvailableModules(mergedModules);
       })
@@ -348,6 +358,8 @@ export default function ModularPipeline() {
   }, []);
   
   
+
+
   // console.log(allModules);
   // console.log(mergedModules);
 
@@ -983,23 +995,61 @@ ${Object.entries(mod.config)
             </div>
           </div>
         );
-      case "LLM Analyzer":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Prompt Template
-              </label>
-              <textarea
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.promptTemplate || ""}
-                onChange={(e) =>
-                  handleConfigChange("promptTemplate", e.target.value)
-                }
-              />
+        case "LLM Analyzer": {
+          const id = "llm.analyzer"; // backend-matching ID
+          const fields = blockConfigSchemas[id];
+        
+          console.log("Schema map:", blockConfigSchemas);
+          console.log("Current module ID:", currentModuleConfig?.type.toLowerCase().replace(/\s+/g, "."));
+        
+          if (!fields)
+            return <div className="text-sm text-gray-500">Loading config schema...</div>;
+        
+          return (
+            <div className="space-y-4">
+              {Object.entries(fields).map(([key, field]) => (
+                <div key={key} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {key} {field.required ? "*" : ""}
+                  </label>
+        
+                  {field.type === "string" && (
+                    <input
+                      type="text"
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                      value={config[key] || ""}
+                      onChange={(e) => handleConfigChange(key, e.target.value)}
+                    />
+                  )}
+        
+                  {field.type === "number" && (
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                      value={config[key] ?? ""}
+                      onChange={(e) =>
+                        handleConfigChange(
+                          key,
+                          e.target.value === "" ? "" : parseFloat(e.target.value)
+                        )
+                      }
+                    />
+                  )}
+        
+                  {field.type === "boolean" && (
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={config[key] ?? false}
+                      onChange={(e) => handleConfigChange(key, e.target.checked)}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        );
+          );
+        };
+        
       case "Topic Extractor":
         return (
           <div className="space-y-4">
