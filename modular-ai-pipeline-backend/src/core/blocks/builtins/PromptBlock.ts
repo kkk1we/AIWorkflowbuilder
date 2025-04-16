@@ -15,7 +15,7 @@ export const PromptBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "llm.prompt",
+  id: "llm.analyzer",
   displayName: "Prompt GPT",
   inputs: ["input"],
   outputs: ["output"],
@@ -46,3 +46,4 @@ export const PromptBlock: Block<
     }
   },
 };
+module.exports = { PromptBlock }; // for CommonJS

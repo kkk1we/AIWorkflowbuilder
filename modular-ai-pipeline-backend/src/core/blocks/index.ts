@@ -1,14 +1,19 @@
 import fs from "fs";
 import path from "path";
-import { ZodTypeAny } from "zod";
 import { logger } from "../../utils/logger";
 import { Block } from "./types";
+import { ZodTypeAny } from "zod";
 
 export const blockRegistry: Record<string, Block> = {};
 
-function loadBlocksFromDir(dirPath: string) {
-  const absDir = path.resolve(__dirname, dirPath);
-  if (!fs.existsSync(absDir)) return;
+function loadBlocksFromDir(relativeDir: string) {
+  const absDir = path.resolve(__dirname, relativeDir);
+  logger.info(`🔍 Loading blocks from: ${absDir}`);
+
+  if (!fs.existsSync(absDir)) {
+    logger.warn(`❌ Directory does not exist: ${absDir}`);
+    return;
+  }
 
   const files = fs
     .readdirSync(absDir)
@@ -16,29 +21,29 @@ function loadBlocksFromDir(dirPath: string) {
 
   for (const file of files) {
     const fullPath = path.join(absDir, file);
+    let module: Record<string, unknown>;
 
-    // NOTE: Dynamic import in CommonJS context
-    const module = require(fullPath);
+    try {
+      module = require(fullPath);
+    } catch (err) {
+      logger.warn(`❌ Failed to load module ${file}: ${err}`);
+      continue;
+    }
 
-    Object.values(module).forEach((maybeBlock) => {
+    Object.entries(module).forEach(([exportName, maybeBlock]) => {
       const block = maybeBlock as Block;
 
       if (!block?.id || !block?.run || !block?.configSchema?.safeParse) {
-        logger.warn(`⚠️ Skipping ${file}: missing id/run/configSchema`);
+        logger.warn(`⚠️ Skipping export "${exportName}" in ${file}: missing required properties`);
         return;
       }
 
-      try {
-        (block.configSchema as ZodTypeAny).parse({});
-        blockRegistry[block.id] = block;
-        logger.info(`✅ Registered block: ${block.id}`);
-      } catch (err) {
-        logger.warn(`❌ Invalid configSchema in ${block.id}: ${err}`);
-      }
+      blockRegistry[block.id] = block;
+      logger.info(`✅ Registered block: ${block.id}`);
     });
   }
 }
 
-// Auto-load both builtins and external blocks
+// Auto-load block modules
 loadBlocksFromDir("./builtins");
-loadBlocksFromDir("./external");
+// loadBlocksFromDir("./external");

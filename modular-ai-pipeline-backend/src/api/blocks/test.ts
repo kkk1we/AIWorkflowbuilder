@@ -11,6 +11,7 @@ router.get("/", async (req, res) => {
     try {
       // Provide generic mock config with fallback
       const mockConfig = block.configSchema.safeParse({
+        model: "gpt-4o",
         prompt: "Say hi to {{input}}",
         temperature: 0.7,
         sheetId: "sheet123",
