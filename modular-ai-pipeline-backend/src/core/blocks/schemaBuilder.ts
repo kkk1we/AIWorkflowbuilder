@@ -4,38 +4,42 @@ import {
   ZodString,
   ZodNumber,
   ZodBoolean,
-  ZodRawShape,
+  ZodOptional,
+  ZodDefault,
 } from "zod";
 
-type FieldType = "string" | "number" | "boolean" | "unknown";
-
-interface FieldSchema {
-  type: FieldType;
-  required: boolean;
+function unwrapType(type: ZodTypeAny): ZodTypeAny {
+  if (type instanceof ZodOptional || type instanceof ZodDefault) {
+    return unwrapType(type._def.innerType); // recursively unwrap
+  }
+  return type;
 }
 
-export function zodToFields(schema: ZodTypeAny): Record<string, FieldSchema> {
-  const fields: Record<string, FieldSchema> = {};
+export function zodToFields(schema: ZodTypeAny) {
+  const fields: Record<string, any> = {};
 
   if (!(schema instanceof ZodObject)) return fields;
 
-  const shape = (schema._def.shape() ?? {}) as ZodRawShape;
+  const shape = schema.shape;
 
-  for (const [key, def] of Object.entries(shape)) {
-    const fieldSchema: FieldSchema = {
-      type: getFieldType(def),
-      required: !def.isOptional?.(), // safe check for optional fields
+  for (const [key, rawDef] of Object.entries(shape)) {
+    const def = rawDef as ZodTypeAny;
+    const unwrapped = unwrapType(def);
+
+    const base: any = {
+      required: !def.isOptional?.(), // whether the outer type is optional
     };
 
-    fields[key] = fieldSchema;
+    if (unwrapped instanceof ZodString) {
+      fields[key] = { type: "string", ...base };
+    } else if (unwrapped instanceof ZodNumber) {
+      fields[key] = { type: "number", ...base };
+    } else if (unwrapped instanceof ZodBoolean) {
+      fields[key] = { type: "boolean", ...base };
+    } else {
+      fields[key] = { type: "unknown", ...base };
+    }
   }
 
   return fields;
-}
-
-function getFieldType(def: ZodTypeAny): FieldType {
-  if (def instanceof ZodString) return "string";
-  if (def instanceof ZodNumber) return "number";
-  if (def instanceof ZodBoolean) return "boolean";
-  return "unknown";
 }
