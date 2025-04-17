@@ -46,4 +46,7 @@ function loadBlocksFromDir(relativeDir: string) {
 
 // Auto-load block modules
 loadBlocksFromDir("./builtins");
-// loadBlocksFromDir("./external");
+loadBlocksFromDir("./builtins/triggers");
+loadBlocksFromDir("./builtins/integrations");
+
+

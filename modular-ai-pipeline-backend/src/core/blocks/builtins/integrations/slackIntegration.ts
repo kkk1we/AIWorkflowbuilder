@@ -1,12 +1,12 @@
 
 import { z } from "zod";
-import { Block } from "../types";
+import { Block } from "../../types";
 import {
   slackintegrationSchema,
 //   googlesheetsSchema,
 //   salesforceSchema,
 //   mailchimpSchema,
-} from "./schemas/slackIntegrationSchema"; // adjust path
+} from "../schemas/integrations/slackintegrationSchema"; // adjust path
 
 
 
