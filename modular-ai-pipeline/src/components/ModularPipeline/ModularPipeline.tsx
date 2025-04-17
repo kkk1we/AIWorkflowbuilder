@@ -792,24 +792,64 @@ ${Object.entries(mod.config)
             </div>
           </div>
         );
-      case "Schedule Trigger":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Schedule Time
-              </label>
-              <input
-                type="time"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.time || ""}
-                onChange={(e) =>
-                  handleConfigChange("time", e.target.value)
-                }
-              />
+        case "Schedule Trigger": {
+          const id = "schedule.trigger"; // backend-matching ID
+          const fields = blockConfigSchemas[id];
+        
+          console.log("Schema map:", blockConfigSchemas);
+          console.log(
+            "Current module ID:",
+            currentModuleConfig?.type.toLowerCase().replace(/\s+/g, ".")
+          );
+        
+          if (!fields)
+            return <div className="text-sm text-gray-500">Loading config schema...</div>;
+        
+          return (
+            <div className="space-y-4">
+              {Object.entries(fields).map(([key, field]) => (
+                <div key={key} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {key} {field.required ? "*" : ""}
+                  </label>
+        
+                  {field.type === "string" && (
+                    <input
+                      type="text"
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                      value={config[key] || ""}
+                      onChange={(e) => handleConfigChange(key, e.target.value)}
+                    />
+                  )}
+        
+                  {field.type === "number" && (
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                      value={config[key] ?? ""}
+                      onChange={(e) =>
+                        handleConfigChange(
+                          key,
+                          e.target.value === "" ? "" : parseFloat(e.target.value)
+                        )
+                      }
+                    />
+                  )}
+        
+                  {field.type === "boolean" && (
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={config[key] ?? false}
+                      onChange={(e) => handleConfigChange(key, e.target.checked)}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        );
+          );
+        };
+        
       case "Event Trigger":
         return (
           <div className="space-y-4">

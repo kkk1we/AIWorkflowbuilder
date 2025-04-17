@@ -1,19 +1,13 @@
 import { z } from "zod";
 import { callLLM, callLLMStream } from "../../../services/openai";
 import { Block } from "../types";
-
+import { llmPromptSchema } from "./schemas/llmPromptSchema";
 // src/core/blocks/builtins/llmAnalyzer.ts (or similar)
 
-const configSchema = z.object({
-  model: z.string(),
-  prompt: z.string(),
-  temperature: z.number().optional().default(0.7),
-  stream: z.boolean().optional().default(false),
-});
 
 export const PromptBlock: Block<
   { input: string },
-  z.infer<typeof configSchema>,
+  z.infer<typeof llmPromptSchema>,
   { memory: Record<string, any> },
   { output: string }
 > = {
@@ -21,7 +15,7 @@ export const PromptBlock: Block<
   displayName: "LLM Analyzer",
   inputs: ["input"],
   outputs: ["output"],
-  configSchema,
+  configSchema: llmPromptSchema,
 
   async *run(input, config, context) {
     const renderedPrompt = config.prompt.replace("{{input}}", input.input);
@@ -33,7 +27,7 @@ export const PromptBlock: Block<
         temperature: config.temperature,
       })) {
         yield { output: chunk };
-      }
+      };
       return { output: "" };
     } else {
       const result = await callLLM({
