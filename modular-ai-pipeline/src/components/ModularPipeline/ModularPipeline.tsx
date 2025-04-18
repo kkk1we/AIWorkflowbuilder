@@ -753,499 +753,77 @@ ${Object.entries(mod.config)
 
   const renderModuleConfig = () => {
     if (!currentModuleConfig) return null;
-    const { type, config } = currentModuleConfig;
-    switch (type) {
-      case "If Condition":
-        return renderConditionalConfig(currentModuleConfig);
-      case "Webhook Trigger":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Endpoint Path
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.path || ""}
-                onChange={(e) =>
-                  handleConfigChange("path", e.target.value)
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                HTTP Method
-              </label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.method || "POST"}
-                onChange={(e) =>
-                  handleConfigChange("method", e.target.value)
-                }
-              >
-                <option>GET</option>
-                <option>POST</option>
-                <option>PUT</option>
-                <option>DELETE</option>
-              </select>
-            </div>
-          </div>
-        );
-        case "Schedule Trigger": {
-          const id = "schedule.trigger"; // backend-matching ID
-          const fields = blockConfigSchemas[id];
-        
-          console.log("Schema map:", blockConfigSchemas);
-          console.log(
-            "Current module ID:",
-            currentModuleConfig?.type.toLowerCase().replace(/\s+/g, ".")
-          );
-        
-          if (!fields)
-            return <div className="text-sm text-gray-500">Loading config schema...</div>;
-        
-          return (
-            <div className="space-y-4">
-              {Object.entries(fields).map(([key, field]) => (
-                <div key={key} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {key} {field.required ? "*" : ""}
-                  </label>
-        
-                  {field.type === "string" && (
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                      value={config[key] || ""}
-                      onChange={(e) => handleConfigChange(key, e.target.value)}
-                    />
-                  )}
-        
-                  {field.type === "number" && (
-                    <input
-                      type="number"
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                      value={config[key] ?? ""}
-                      onChange={(e) =>
-                        handleConfigChange(
-                          key,
-                          e.target.value === "" ? "" : parseFloat(e.target.value)
-                        )
-                      }
-                    />
-                  )}
-        
-                  {field.type === "boolean" && (
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4"
-                      checked={config[key] ?? false}
-                      onChange={(e) => handleConfigChange(key, e.target.checked)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          );
-        };
-        
-      case "Event Trigger":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Event Name
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.eventName || ""}
-                onChange={(e) =>
-                  handleConfigChange("eventName", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Slack Integration":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Webhook URL
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.webhookUrl || ""}
-                onChange={(e) =>
-                  handleConfigChange("webhookUrl", e.target.value)
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Channel
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.channel || ""}
-                onChange={(e) =>
-                  handleConfigChange("channel", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Google Sheets":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Sheet ID
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.sheetId || ""}
-                onChange={(e) =>
-                  handleConfigChange("sheetId", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Salesforce":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                API Key
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.apiKey || ""}
-                onChange={(e) =>
-                  handleConfigChange("apiKey", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Mailchimp":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                API Key
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.apiKey || ""}
-                onChange={(e) =>
-                  handleConfigChange("apiKey", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "File Ingestor":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Accepted File Types (comma separated)
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={
-                  config.acceptTypes ? config.acceptTypes.join(",") : ""
-                }
-                onChange={(e) =>
-                  handleConfigChange("acceptTypes", e.target.value.split(","))
-                }
-              />
-            </div>
-          </div>
-        );
-      case "OCR / PDF Extractor":
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700">
-              No additional configuration required.
-            </p>
-          </div>
-        );
-      case "Transcriber":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Language
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.language || ""}
-                onChange={(e) =>
-                  handleConfigChange("language", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Web Scraper":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Target URL
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.targetUrl || ""}
-                onChange={(e) =>
-                  handleConfigChange("targetUrl", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Text Segmenter":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Chunk Size
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.chunkSize || 0}
-                onChange={(e) =>
-                  handleConfigChange("chunkSize", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-        case "LLM Analyzer": {
-          const id = "llm.analyzer"; // backend-matching ID
-          const fields = blockConfigSchemas[id];
-        
-          console.log("Schema map:", blockConfigSchemas);
-          console.log("Current module ID:", currentModuleConfig?.type.toLowerCase().replace(/\s+/g, "."));
-        
-          if (!fields)
-            return <div className="text-sm text-gray-500">Loading config schema...</div>;
-        
-          return (
-            <div className="space-y-4">
-              {Object.entries(fields).map(([key, field]) => (
-                <div key={key} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {key} {field.required ? "*" : ""}
-                  </label>
-        
-                  {field.type === "string" && (
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                      value={config[key] || ""}
-                      onChange={(e) => handleConfigChange(key, e.target.value)}
-                    />
-                  )}
-        
-                  {field.type === "number" && (
-                    <input
-                      type="number"
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                      value={config[key] ?? ""}
-                      onChange={(e) =>
-                        handleConfigChange(
-                          key,
-                          e.target.value === "" ? "" : parseFloat(e.target.value)
-                        )
-                      }
-                    />
-                  )}
-        
-                  {field.type === "boolean" && (
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4"
-                      checked={config[key] ?? false}
-                      onChange={(e) => handleConfigChange(key, e.target.checked)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          );
-        };
-        
-      case "Topic Extractor":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Number of Topics
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.numTopics || 0}
-                onChange={(e) =>
-                  handleConfigChange("numTopics", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "NER / Skill Extractor":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Fields to Extract (comma separated)
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.extractFields ? config.extractFields.join(",") : ""}
-                onChange={(e) =>
-                  handleConfigChange("extractFields", e.target.value.split(","))
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Vector Matcher":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Similarity Threshold
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.threshold || 0}
-                onChange={(e) =>
-                  handleConfigChange("threshold", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Summarizer":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Max Length
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.maxLength || 0}
-                onChange={(e) =>
-                  handleConfigChange("maxLength", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Email Generator":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Email Subject
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.emailSubject || ""}
-                onChange={(e) =>
-                  handleConfigChange("emailSubject", e.target.value)
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Email Body Template
-              </label>
-              <textarea
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.emailBody || ""}
-                onChange={(e) =>
-                  handleConfigChange("emailBody", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "DB Writer":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Database Connection String
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.connectionString || ""}
-                onChange={(e) =>
-                  handleConfigChange("connectionString", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Notifier":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Notification Message
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={config.notificationMessage || ""}
-                onChange={(e) =>
-                  handleConfigChange("notificationMessage", e.target.value)
-                }
-              />
-            </div>
-          </div>
-        );
-      case "Else Path":
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700">
-              No configuration required for Else Path.
-            </p>
-          </div>
-        );
-      default:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700">
-              No configuration available for this module type.
-            </p>
-          </div>
-        );
+    if (currentModuleConfig.type === "If Condition") {
+      return renderConditionalConfig(currentModuleConfig);
     }
+  
+    const blockNameMap: Record<string, string> = {
+      "If Condition": "ifCondition",
+      "Else Path": "elsePath",
+    };
+  
+    const blockId =
+      currentModuleConfig.type in blockNameMap
+        ? blockNameMap[currentModuleConfig.type]
+        : currentModuleConfig.type.toLowerCase().replace(/\s+/g, ".");
+  
+    const fields = blockConfigSchemas[blockId];
+  
+    if (!fields) {
+      return (
+        <div className="text-sm text-gray-500">
+          No configuration available for this module type.
+        </div>
+      );
+    }
+  
+    return (
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-4">
+          {Object.entries(fields).map(([key, field]) => (
+            <div key={key} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                {key} {field.required ? "*" : ""}
+              </label>
+  
+              {field.type === "string" && (
+                <input
+                  type="text"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  value={currentModuleConfig.config[key] || ""}
+                  onChange={(e) => handleConfigChange(key, e.target.value)}
+                />
+              )}
+  
+              {field.type === "number" && (
+                <input
+                  type="number"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  value={currentModuleConfig.config[key] ?? ""}
+                  onChange={(e) =>
+                    handleConfigChange(
+                      key,
+                      e.target.value === "" ? "" : parseFloat(e.target.value)
+                    )
+                  }
+                />
+              )}
+  
+              {field.type === "boolean" && (
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={currentModuleConfig.config[key] ?? false}
+                  onChange={(e) => handleConfigChange(key, e.target.checked)}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
+  
 
   /* ------------------------------------------------------------------
      FINAL RENDERING

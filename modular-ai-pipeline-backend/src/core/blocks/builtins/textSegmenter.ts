@@ -9,7 +9,7 @@ export const textSegmenterBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "textSegmenter",
+  id: "text.segmenter",
   displayName: "Text Segmenter",
   inputs: ["input"],
   outputs: ["output"],

@@ -9,7 +9,7 @@ export const webScraperBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "webScraper",
+  id: "web.scraper",
   displayName: "Web Scraper",
   inputs: ["input"],
   outputs: ["output"],

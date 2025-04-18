@@ -9,7 +9,7 @@ export const nerExtractorBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "ner.extractor",
+  id: "ner./.skill.extractor",
   displayName: "NER / Skill Extractor",
   inputs: ["input"],
   outputs: ["output"],

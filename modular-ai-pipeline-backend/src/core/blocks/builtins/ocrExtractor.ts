@@ -9,7 +9,7 @@ export const ocrExtractorBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "ocr.extractor",
+  id: "ocr./.pdf.extractor",
   displayName: "OCR / PDF Extractor",
   inputs: ["input"],
   outputs: ["output"],

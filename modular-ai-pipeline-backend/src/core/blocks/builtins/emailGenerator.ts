@@ -9,7 +9,7 @@ export const emailGeneratorBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "emailGenerator",
+  id: "email.generator",
   displayName: "Email Generator",
   inputs: ["input"],
   outputs: ["output"],

@@ -9,7 +9,7 @@ export const vectorMatcherBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "vectorMatcher",
+  id: "vector.matcher",
   displayName: "Vector Matcher",
   inputs: ["input"],
   outputs: ["output"],

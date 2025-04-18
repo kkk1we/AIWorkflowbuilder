@@ -16,7 +16,7 @@ export const fileIngestorBlock: Block<
   configSchema: fileIngestorSchema,
 
   async *run(input, config, context) {
-    const renderedPrompt = config.prompt.replace("{{input}}", input.input);
+    const renderedPrompt = config.config.replace("{{input}}", input.input);
     yield { output: `Processed: ${input.input}` }; return { output: "Done" };
   },
 };
