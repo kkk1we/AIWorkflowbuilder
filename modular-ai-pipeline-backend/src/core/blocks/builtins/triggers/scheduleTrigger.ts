@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { Block } from "../types";
+import { Block } from "../../types";
 
-import { scheduleTriggerSchema } from "./schemas/scheduleTriggerSchema";
+import { scheduleTriggerSchema } from "../schemas/triggers/scheduleTriggerSchema";
 
 export const ScheduleTrigger: Block<
   {},

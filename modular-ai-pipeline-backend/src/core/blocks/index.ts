@@ -3,6 +3,8 @@ import path from "path";
 import { logger } from "../../utils/logger";
 import { Block } from "./types";
 import { ZodTypeAny } from "zod";
+require("ts-node").register(); // enables .ts support in require()
+
 
 export const blockRegistry: Record<string, Block> = {};
 

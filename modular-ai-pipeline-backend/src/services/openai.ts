@@ -1,21 +1,21 @@
 import OpenAI from "openai";
 
 // Lazy-loaded singleton
-let openaiClient: OpenAI | null = null;
+let openaiClient: OpenAI | undefined;
 
 function getOpenAIClient(): OpenAI {
-  if (!process.env.OPENAI_API_KEY) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
     throw new Error("❌ OPENAI_API_KEY is not set in environment");
   }
 
   if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    openaiClient = new OpenAI({ apiKey });
   }
 
   return openaiClient;
 }
+
 export async function callLLM({
   prompt,
   model,
@@ -39,17 +39,14 @@ export async function callLLM({
     ...(functions ? { functions } : {}),
   });
 
-  if (stream) {
-    return res; // ✅ Stream mode, don’t access choices
-  }
+  if (stream) return res;
 
-  // ✅ Type guard to avoid TS2339 error
   if ("choices" in res && res.choices.length > 0) {
     return res.choices[0].message?.content ?? null;
   }
 
   return null;
-};
+}
 
 export async function* callLLMStream({
   model,

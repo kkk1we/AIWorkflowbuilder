@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { Block } from "../types";
+import { Block } from "../../types";
 import {
 mailchimpSchema,
-} from "./schemas/mailchimpSchema"; // adjust path
+} from "../schemas/integrations/mailchimpSchema"; // adjust path
 
 
 export const Mailchimp: Block<

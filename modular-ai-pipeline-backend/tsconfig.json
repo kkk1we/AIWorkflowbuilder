@@ -8,7 +8,8 @@
       "rootDir": ".",
       "resolveJsonModule": true,
       "strict": true,
-      "skipLibCheck": true
+      "skipLibCheck": true,
+      "noImplicitAny": false
     },
     "include": ["server.ts", "src/**/*"]
   }

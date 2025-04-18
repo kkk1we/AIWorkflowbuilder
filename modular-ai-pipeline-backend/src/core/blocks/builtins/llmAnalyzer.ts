@@ -2,8 +2,6 @@ import { z } from "zod";
 import { callLLM, callLLMStream } from "../../../services/openai";
 import { Block } from "../types";
 import { llmPromptSchema } from "./schemas/llmPromptSchema";
-// src/core/blocks/builtins/llmAnalyzer.ts (or similar)
-
 
 export const PromptBlock: Block<
   { input: string },
@@ -11,13 +9,17 @@ export const PromptBlock: Block<
   { memory: Record<string, any> },
   { output: string }
 > = {
-  id: "llm.analyzer", // matches frontend block ID
+  id: "llm.analyzer",
   displayName: "LLM Analyzer",
   inputs: ["input"],
   outputs: ["output"],
   configSchema: llmPromptSchema,
 
-  async *run(input, config, context) {
+  async *run(
+    input: { input: string },
+    config: z.infer<typeof llmPromptSchema>,
+    context: { memory: Record<string, any> }
+  ) {
     const renderedPrompt = config.prompt.replace("{{input}}", input.input);
 
     if (config.stream) {
@@ -27,7 +29,7 @@ export const PromptBlock: Block<
         temperature: config.temperature,
       })) {
         yield { output: chunk };
-      };
+      }
       return { output: "" };
     } else {
       const result = await callLLM({
@@ -42,4 +44,4 @@ export const PromptBlock: Block<
   },
 };
 
-module.exports = { PromptBlock }; // for CommonJS
+module.exports = { PromptBlock };

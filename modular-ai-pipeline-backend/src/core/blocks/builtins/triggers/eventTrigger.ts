@@ -1,8 +1,8 @@
 // src/core/blocks/builtins/eventTrigger.ts
 
 import { z } from "zod";
-import { Block } from "../types";
-import { eventTriggerSchema } from "./schemas/eventTriggerSchema";
+import { Block } from "../../types";
+import { eventTriggerSchema } from "../schemas/triggers/eventTriggerSchema";
 
 export const EventTrigger: Block<
   {}, // No input needed for a trigger
