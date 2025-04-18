@@ -1,0 +1,16 @@
+[33mf6ca4e1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m commit some bugs where its using an older version
+[33m47df5cf[m hello
+[33mde151cc[m added more integrations
+[33me5955c4[m it fucking works now
+[33mc7a27bf[m almost there dynamically render backend configs
+[33m400103b[m dynamic modules render
+[33m44c4961[m Stop tracking .env files
+[33m8c0dabd[m removed env
+[33m9a94f37[m backend and frontend. frontend tool tips not fixed, will replace with dynamic modals soon
+[33m1ae5dce[m cogwheel now works, learnt to use refs properly, quite cool
+[33mf0433e1[m has 90 blocks, last working ver
+[33m386c22c[m works with nodes etc
+[33m72c7e2b[m works
+[33m680ddec[m all
+[33m130934d[m first working UI
+[33mf54e8b4[m hello

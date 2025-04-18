@@ -15,29 +15,26 @@ function unwrapType(type: ZodTypeAny): ZodTypeAny {
   return type;
 }
 
-export function zodToFields(schema: ZodTypeAny) {
-  const fields: Record<string, any> = {};
+export function zodToFields(schema: ZodTypeAny): Record<string, { type: string; required: boolean }> {
+  const fields: Record<string, { type: string; required: boolean }> = {};
 
   if (!(schema instanceof ZodObject)) return fields;
 
-  const shape = schema.shape;
+  const shape = schema._def.shape(); // proper access
 
-  for (const [key, rawDef] of Object.entries(shape)) {
-    const def = rawDef as ZodTypeAny;
-    const unwrapped = unwrapType(def);
+  for (const [key, def] of Object.entries(shape)) {
+    const unwrapped = unwrapType(def as ZodTypeAny);
 
-    const base: any = {
-      required: !def.isOptional?.(), // whether the outer type is optional
-    };
+    const required = !(def instanceof ZodOptional || def instanceof ZodDefault);
 
     if (unwrapped instanceof ZodString) {
-      fields[key] = { type: "string", ...base };
+      fields[key] = { type: "string", required };
     } else if (unwrapped instanceof ZodNumber) {
-      fields[key] = { type: "number", ...base };
+      fields[key] = { type: "number", required };
     } else if (unwrapped instanceof ZodBoolean) {
-      fields[key] = { type: "boolean", ...base };
+      fields[key] = { type: "boolean", required };
     } else {
-      fields[key] = { type: "unknown", ...base };
+      fields[key] = { type: "unknown", required };
     }
   }
 
