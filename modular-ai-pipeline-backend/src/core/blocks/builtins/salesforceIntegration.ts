@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Block } from "../types";
 import {
 salesforceSchema,
-} from "./schemas/salesForceSchema"; // adjust path
+} from "./schemas/salesforceSchema"; // adjust path
 
 
 export const Salesforce: Block<
